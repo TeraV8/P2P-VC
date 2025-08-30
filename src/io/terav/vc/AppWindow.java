@@ -23,7 +23,9 @@ import java.awt.event.WindowEvent;
 import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
@@ -82,9 +84,9 @@ public class AppWindow extends JFrame implements Runnable {
     AppWindow() {
         super("P2P-VC " + Main.VERSION);
         
-        PEER_ONLINE = new ImageIcon("src/online.png");
-        PEER_OFFLINE = new ImageIcon("src/offline.png");
-        PEER_IDLE = new ImageIcon("src/idle.png");
+        PEER_ONLINE = new ImageIcon(ClassLoader.getSystemResource("online.png"));
+        PEER_OFFLINE = new ImageIcon(ClassLoader.getSystemResource("offline.png"));
+        PEER_IDLE = new ImageIcon(ClassLoader.getSystemResource("idle.png"));
         
         this.modal_dconn = new DirectConnectModal();
         this.dialog_appinfo = new AppInfoDialog();
