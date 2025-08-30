@@ -1,0 +1,213 @@
+package io.terav.vc;
+
+import io.terav.vc.net.PacketReceiver;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
+
+public class DiscoveryManager implements Runnable {
+    private static final InetSocketAddress ssdpMcast;
+    static {
+        try {
+            ssdpMcast = new InetSocketAddress(InetAddress.getByAddress(new byte[] { -17, -1, -1, -6 }), 1900);
+        } catch (UnknownHostException e) {
+            throw new Error("UnknownHostException in initializer", e);
+        }
+    }
+    
+    private final DatagramSocket outbound;
+    private final Thread thread;
+    private final InetAddress local;
+    private final InetAddress gateway;
+    //private final Inet6Address self;
+    private final PacketReceiptRunner runrResponse;
+    private boolean running = true;
+    public DiscoveryManager() {
+        NetworkInterface inf;
+        try {
+            local = InetAddress.getLocalHost();
+            inf = NetworkInterface.getByInetAddress(local);
+            if (local instanceof Inet6Address) {
+                gateway = InetAddress.getByAddress(new byte[] { (byte) 0xFE, (byte) 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+            } else { // we need these shenanigans to get the default gateway (IPv4 only)
+                ArrayList<InterfaceAddress> addrs = new ArrayList<>(inf.getInterfaceAddresses());
+                short prefix = -1;
+                for (InterfaceAddress ifaddr : addrs) {
+                    if (ifaddr.getAddress().equals(local))
+                        prefix = ifaddr.getNetworkPrefixLength();
+                }
+                if (prefix == -1)
+                    throw new RuntimeException("Cannot locate interface with local address");
+                // all that just for the network prefix
+                int addr = (local.hashCode() & ((-1) << prefix)) + 1;
+                gateway = InetAddress.getByAddress(new byte[] {
+                    (byte)(addr >> 24),
+                    (byte)(addr >> 16),
+                    (byte)(addr >> 8),
+                    (byte) addr
+                });
+            }
+            System.out.println("Local address: " + local + "\t\tGateway: " + gateway);
+        } catch (UnknownHostException | SocketException ioe) {
+            throw new RuntimeException("Error in gateway lookup", ioe);
+        }
+        try {
+            outbound = new DatagramSocket(0, local);
+            outbound.joinGroup(ssdpMcast, inf);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Failed to bind discovery socket", ioe);
+        }
+        this.runrResponse = new PacketReceiptRunner(outbound);
+        this.thread = new Thread(this);
+        this.thread.setName("DiscoveryManager");
+        this.thread.setDaemon(true);
+        this.thread.start();
+    }
+    @Override
+    public void run() {
+        UUID uniqueId = UUID.nameUUIDFromBytes(("p2p-vc@" + local.getHostName()).getBytes());
+        try {
+            // send advertisement
+            //sendSSDP("""
+            //         NOTIFY * HTTP/1.1\r
+            //         HOST: 239.255.255.250:1900\r
+            //         CACHE-CONTROL: max-age = 10\r
+            //         LOCATION: http://localhost:12345/dead-inside\r
+            //         NT: urn:javaserver-net:p2p-vc:inet-p2p:1\r
+            //         NTS: ssdp:alive\r
+            //         SERVER: generic/1 UPnP/2.0 P2P-VC/""" + Main.VERSION + "\r"
+            //                 + "USN: uuid:" + uniqueId + "", ssdpMcast); // TODO
+            searchForIGD();
+            //DatagramPacket packet = runrResponse.queue.take();
+            //System.out.println("Received packet with length " + packet.getLength());
+        } catch (IOException ioe) {
+            System.err.println("Error in discovery loop: " + ioe.toString());
+        }
+    }
+    private void sendSSDP(String text, InetSocketAddress target) throws IOException {
+        byte[] data = text.getBytes();
+        DatagramPacket packet = new DatagramPacket(data, data.length);
+        packet.setSocketAddress(target);
+        outbound.send(packet);
+    }
+    private void pollNetworkDevices(String target) throws IOException {
+        sendSSDP("""
+                 M-SEARCH * HTTP/1.1\r
+                 HOST: 239.255.255.250:1900\r
+                 MAN: "ssdp:discover"\r
+                 MX: 2\r
+                 ST: """ + target + "\r\n"
+                + "CPFN.UPNP.ORG: P2P-VC@" + local.getHostName() + "\r\n\r\n", ssdpMcast);
+        final long done = System.currentTimeMillis() + 2500;
+        ArrayList<DatagramPacket> responses = new ArrayList<>();
+        while (System.currentTimeMillis() < done) {
+            try {
+                DatagramPacket pak = runrResponse.queue.poll(done - System.currentTimeMillis() + 1, TimeUnit.MILLISECONDS);
+                if (pak != null) responses.add(pak);
+            } catch (InterruptedException e) {}
+        }
+        System.out.println("Received " + responses.size() + " responses");
+        for (DatagramPacket p : responses) {
+            String response = new String(p.getData(), 0, p.getLength());
+            System.out.println("==> Response from " + p.getAddress());
+            System.out.println(response);
+        }
+    }
+    private void searchForIGD() throws IOException {
+        //pollNetworkDevices("urn:schemas-upnp-org:device:InternetGatewayDevice");
+        pollNetworkDevices("ssdp:all");
+    }
+    private void sendMappingV0() throws IOException { // NAT-PMP
+        byte[] data = new byte[] { 0, 0 }; // TODO incomplete
+        DatagramPacket packet = new DatagramPacket(data, data.length);
+        packet.setAddress(gateway);
+        packet.setPort(5351);
+        outbound.send(packet);
+    }
+    private void sendMappingV2() throws IOException { // PCP
+        byte[] addr;
+        if (local instanceof Inet6Address) addr = local.getAddress();
+        else {
+            addr = new byte[16];
+            addr[10] = (byte) 0xFF;
+            addr[11] = (byte) 0xFF;
+            System.arraycopy(local.getAddress(), 0, addr, 12, 4);
+        }
+        byte[] nonce = new byte[12];
+        new Random().nextBytes(nonce);
+        
+        byte[] data = new byte[60];
+        data[0] = 2; // version 2
+        data[1] = 0x00 | 1; // request, MAP operation
+        data[2] = data[3] = 0; // reserved
+        data[4] = data[5] = data[6] = 0; data[7] = 5; // 5 seconds (testing purposes)
+        System.arraycopy(addr, 0, data, 8, 16); // client address
+        System.arraycopy(nonce, 0, data, 24, 12); // MAP nonce
+        data[36] = 17; // UDP
+        data[37] = data[38] = data[39] = 0; // reserved
+        data[40] = (byte)(31416 >> 8); data[41] = (byte)(31416); // internal port 31416
+        data[42] = (byte)(31416 >> 8); data[43] = (byte)(31416); // external port 31416
+        if (local instanceof Inet4Address) { // all zeros address for external address
+            data[54] = (byte) 0xFF;
+            data[55] = (byte) 0xFF;
+        }
+        System.out.println(Arrays.toString(data));
+        DatagramPacket packet = new DatagramPacket(data, data.length);
+        packet.setAddress(gateway);
+        packet.setPort(5351);
+        outbound.send(packet);
+    }
+    private void sendRequest() throws IOException {
+        
+    }
+    
+    private class PacketReceiptRunner implements Runnable {
+        private final SynchronousQueue<DatagramPacket> queue = new SynchronousQueue<>();
+        private final Thread thread;
+        private final DatagramSocket socket;
+        private PacketReceiptRunner(DatagramSocket sock) {
+            this.socket = sock;
+            this.thread = new Thread(this);
+            this.thread.setName("DiscoveryPacketReceiver");
+            this.thread.setDaemon(true);
+            this.thread.start();
+        }
+        @Override
+        public void run() {
+            while (running && !socket.isClosed()) {
+                try {
+                    DatagramPacket packet = new DatagramPacket(new byte[1400], 1400);
+                    socket.receive(packet);
+                    System.out.println("packet on " + socket.getLocalSocketAddress());
+                    queue.offer(packet);
+                } catch (IOException ioe) {
+                    System.err.println("Failed to read socket: " + ioe.toString());
+                }
+            }
+        }
+    }
+    
+    public static enum InternetStatus {
+        /** The external address is not known and no port is forwarded. */
+        Offline,
+        /** A request for binding is in progress and the response is being awaited. */
+        Pending,
+        /** The external address is known and a port is forwarded. */
+        Online
+    }
+}
