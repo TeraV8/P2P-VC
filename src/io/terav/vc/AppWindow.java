@@ -165,6 +165,7 @@ public class AppWindow extends JFrame implements Runnable {
                     if (AudioManager.outputDevices.isEmpty()) item_outhead.setText("No output devices found");
                     menu_adev.add(new JSeparator());
                     JMenuItem item_devmgmt = new JMenuItem("Audio devices...");
+                    item_devmgmt.setEnabled(false);
                     item_devmgmt.addActionListener(e -> {}); // TODO
                     menu_adev.add(item_devmgmt);
                 menu_aud.add(menu_adev);
