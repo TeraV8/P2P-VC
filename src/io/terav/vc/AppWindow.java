@@ -171,7 +171,7 @@ public class AppWindow extends JFrame implements Runnable {
                 menu_aud.add(menu_adev);
             menubar.add(menu_aud);
             JMenu menu_net = new JMenu("Network");
-                JMenuItem item_dconn = new JMenuItem("Direct Connect...");
+                JMenuItem item_dconn = new JMenuItem("Connect to peer...");
                 item_dconn.addActionListener(e -> {
                     modal_dconn.prompt("");
                 });
@@ -497,7 +497,7 @@ public class AppWindow extends JFrame implements Runnable {
         private JLabel status;
         
         private DirectConnectModal() {
-            super(AppWindow.this, "Direct Connect", true);
+            super(AppWindow.this, "Connect to peer", true);
             setSize(300, 200);
             setResizable(false);
             setLocationRelativeTo(AppWindow.this);
