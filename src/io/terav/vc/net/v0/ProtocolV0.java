@@ -140,6 +140,7 @@ public final class ProtocolV0 {
         });
         AudioManager.getOutputDriver().silenced = false;
         peer.last_connect_time = System.currentTimeMillis();
+        Main.window.peersUpdate();
     }
     public static void disconnect() {
         if (Main.netman.connectionMode == null) return;

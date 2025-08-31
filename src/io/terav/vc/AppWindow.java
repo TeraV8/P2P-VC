@@ -374,9 +374,14 @@ public class AppWindow extends JFrame implements Runnable {
             return a.getName().compareTo(b.getName());
         });
         DefaultListModel model = (DefaultListModel) channels.getModel();
+        Object selected = channels.getSelectedValue();
         model.setSize(peerlist.size());
-        for (int i = 0; i < peerlist.size(); i++)
+        int index = -1;
+        for (int i = 0; i < peerlist.size(); i++) {
             model.set(i, peerlist.get(i));
+            if (selected == peerlist.get(i)) index = i;
+        }
+        channels.setSelectedIndex(index);
     }
     public void connectionUpdate() {
         final boolean connected = Main.netman.connectionMode != null && !Main.netman.connectionMode.mode.finalized;
