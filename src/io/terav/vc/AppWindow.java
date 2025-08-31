@@ -537,7 +537,7 @@ public class AppWindow extends JFrame implements Runnable {
                         if (i >= newver.length) break;
                         if (newver[i].compareTo(oldver[i]) > 0) {
                             try {
-                                Desktop.getDesktop().browse(new URI("https://github.com/TeraV8/P2P-VC/releases/" + new String(data).trim()));
+                                Desktop.getDesktop().browse(new URI("https://github.com/TeraV8/P2P-VC/releases/tag/v" + new String(data).trim()));
                             } catch (Exception ex) {}
                             updates = true;
                             break;
