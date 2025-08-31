@@ -414,11 +414,12 @@ public class AppWindow extends JFrame implements Runnable {
         private final JLabel conntime;
         private final JLabel lastonline;
         private final JLabel protover;
+        private PeerInfo peer;
         private PeerInfoDialog() {
             super(AppWindow.this, "Peer information", false);
-            setSize(400, 150);
+            setSize(400, 200);
             setResizable(false);
-            setLayout(new GridLayout(5, 2, 10, 5));
+            setLayout(new GridLayout(0, 2, 10, 5));
             setLocationRelativeTo(AppWindow.this);
             JLabel label = new JLabel("IP address");
             label.setHorizontalTextPosition(JLabel.RIGHT);
@@ -451,9 +452,23 @@ public class AppWindow extends JFrame implements Runnable {
             protover = new JLabel();
             protover.setFont(font);
             add(protover);
+            JButton connect = new JButton("Connect");
+            connect.addActionListener(e -> {
+                modal_dconn.prompt(peer.remote.getHostAddress());
+            });
+            add(connect);
+            JButton forget = new JButton("Forget");
+            forget.addActionListener(e -> {
+                int opt = JOptionPane.showConfirmDialog(PeerInfoDialog.this, "Are you sure you want to forget " + peer.getName(), "Confirm forget peer", JOptionPane.WARNING_MESSAGE, JOptionPane.YES_NO_OPTION);
+                if (opt == JOptionPane.YES_OPTION) {
+                    Main.netman.forgetPeer(peer);
+                    setVisible(false);
+                }
+            });
+            add(forget);
         }
         private void show(PeerInfo peer) {
-            setVisible(true);
+            this.peer = peer;
             address.setText(peer.remote.toString());
             nickname.setText(peer.nickname);
             conntime.setText((peer.last_connect_time == -1L) ? "never" : DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(new Date(peer.last_connect_time)));
@@ -471,6 +486,7 @@ public class AppWindow extends JFrame implements Runnable {
                     lastonline.setText(minutes / 1440 + " days ago");
             }
             protover.setText((peer.protover_hi == -1) ? "unknown" : "v" + peer.protover_hi);
+            setVisible(true);
         }
         @Override
         public Insets getInsets() {

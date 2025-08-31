@@ -122,6 +122,21 @@ public final class ConfigManager {
         
         return true;
     }
+    static void deletePeerConfig(PeerInfo peer) {
+        File file = getPeerInfoFile(peer);
+        if (file != null && file.exists()) file.delete();
+    }
+    private static File getPeerInfoFile(PeerInfo peer) {
+        final File dataDir = getDataDir();
+        if (!dataDir.exists()) return null;
+        final File rootCfg = new File(dataDir, "app.cfg");
+        if (!rootCfg.exists()) return null;
+        final File peersDir = new File(dataDir, "peers");
+        if (!peersDir.exists()) return null;
+        String filename = fileNames.get(peer.runtime_id);
+        if (filename == null) return null;
+        return new File(peersDir, filename);
+    }
     public static String getStringProperty(String prop, String def) {
         String ret = master.getProperty(prop);
         if (ret == null) {

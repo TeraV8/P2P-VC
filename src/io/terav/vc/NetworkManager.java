@@ -113,6 +113,14 @@ public class NetworkManager implements Runnable {
         discoman.thread.interrupt();
         if (!suppressUpdate) Main.window.peersUpdate();
     }
+    void forgetPeer(PeerInfo peer) {
+        if (!peers.containsValue(peer)) return;
+        if (getConnectedPeer() == peer)
+            disconnectVC();
+        peers.remove(peer.remote);
+        Main.window.peersUpdate();
+        ConfigManager.deletePeerConfig(peer);
+    }
     void stop() {
         disconnectVC();
         running = false;
