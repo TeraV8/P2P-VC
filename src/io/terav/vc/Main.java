@@ -4,7 +4,7 @@ import java.io.File;
 import javax.swing.JOptionPane;
 
 public class Main {
-    public static final String VERSION = "0.0-0-alpha";
+    public static final String VERSION = "0.1";
     public static AppWindow window;
     public static NetworkManager netman;
     public static void main(String[] args) {
