@@ -16,14 +16,20 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -182,6 +188,40 @@ public class AppWindow extends JFrame implements Runnable {
                     Main.netman.disconnectVC();
                 });
                 menu_net.add(item_discon);
+                menu_net.addSeparator();
+                JMenuItem item_showip = new JMenuItem("Show IP address");
+                item_showip.addActionListener(e -> {
+                    // TODO
+                    InetAddress addr = null;
+                    try {
+                        addr = InetAddress.getLocalHost();
+                        if (!(addr instanceof Inet6Address)) {
+                            NetworkInterface inf = NetworkInterface.getByInetAddress(addr);
+                            for (InetAddress ia : inf.inetAddresses().toList()) {
+                                if (ia instanceof Inet6Address && !ia.isLinkLocalAddress()) {
+                                    addr = ia;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (UnknownHostException | SocketException ex) {}
+                    if (addr instanceof Inet6Address) {
+                        String address;
+                        try {
+                            address = InetAddress.getByAddress(addr.getAddress()).getHostAddress();
+                        } catch (UnknownHostException ex) { return; } // this will never happen
+                        if (JOptionPane.showOptionDialog(AppWindow.this, address, "IP Address", JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[] { "Copy", "OK" }, null) == JOptionPane.OK_OPTION) {
+                            try {
+                                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(address), null);
+                            } catch (IllegalStateException ex) {}
+                        }
+                        return;
+                    }
+                    try {
+                        Desktop.getDesktop().browse(new URI("https://www.showmyip.com/"));
+                    } catch (URISyntaxException | IOException ex) {}
+                });
+                menu_net.add(item_showip);
             menubar.add(menu_net);
             JMenu menu_hlp = new JMenu("Help");
                 JMenuItem item_about = new JMenuItem("About P2P-VC...");
