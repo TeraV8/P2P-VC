@@ -23,6 +23,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -525,6 +526,25 @@ public class AppWindow extends JFrame implements Runnable {
                     HttpURLConnection conn = (HttpURLConnection) URI.create("https://terav8.github.io/P2P-VC/version").toURL().openConnection();
                     if (conn.getResponseCode() != 200)
                         throw new RuntimeException("HTTP response " + conn.getResponseCode());
+                    byte[] data = new byte[conn.getContentLength()];
+                    try (InputStream in = (InputStream) conn.getContent()) {
+                        in.read(data);
+                    }
+                    String[] newver = new String(data).trim().split("[\\.-]");
+                    String[] oldver = Main.VERSION.split("[\\.-]");
+                    boolean updates = false;
+                    for (int i = 0; i < oldver.length; i++) {
+                        if (i >= newver.length) break;
+                        if (newver[i].compareTo(oldver[i]) > 0) {
+                            try {
+                                Desktop.getDesktop().browse(new URI("https://github.com/TeraV8/P2P-VC/releases/" + new String(data).trim()));
+                            } catch (Exception ex) {}
+                            updates = true;
+                            break;
+                        }
+                    }
+                    if (!updates)
+                        JOptionPane.showMessageDialog(AppInfoDialog.this, "P2P-VC is up to date!", "Up to date", JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception ex) {
                     System.err.println(ex);
                     JOptionPane.showMessageDialog(AppInfoDialog.this, "Failed to check for updates", "Update check failed", JOptionPane.ERROR_MESSAGE);
