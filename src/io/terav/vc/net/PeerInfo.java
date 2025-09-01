@@ -1,6 +1,6 @@
 package io.terav.vc.net;
 
-import io.terav.vc.Main;
+import io.terav.vc.NetworkManager;
 import java.net.InetAddress;
 
 public final class PeerInfo {
@@ -41,7 +41,7 @@ public final class PeerInfo {
         return ++last_message_id;
     }
     public void send(Packet p) {
-        Main.netman.sendPacket(p, remote);
+        NetworkManager.sendPacket(p, remote);
         last_packet_time = System.currentTimeMillis();
     }
     

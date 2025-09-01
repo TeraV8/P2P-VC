@@ -15,21 +15,21 @@ public final class ProtocolV0 {
     private static final HashMap<Long, Long> pending_echoes = new HashMap<>();
     // TODO stuf
     private ProtocolV0() {}
-    public static void activateProtocolProcessor(NetworkManager nm) {
-        nm.addPacketHook((nvp,peer) -> {
+    public static void activateProtocolProcessor() {
+        NetworkManager.addPacketHook((nvp,peer) -> {
             ConnectionMode cm = null;
-            if (Main.netman.connectionMode != null && (Main.netman.connectionMode instanceof ConnectionMode)) cm = (ConnectionMode) Main.netman.connectionMode;
+            if (NetworkManager.connectionMode != null && (NetworkManager.connectionMode instanceof ConnectionMode)) cm = (ConnectionMode) NetworkManager.connectionMode;
             final ConnectionMode fcm = cm; // workaround for finicky fields in lambda expressions
             if (nvp instanceof EchoPacket p) {
                 if (pending_echoes.containsKey(p.content))
                     pending_echoes.remove(p.content);
                 else
-                    nm.sendPacket(new EchoPacket(peer.nextMessageId(), p.content), peer.remote);
+                    peer.send(new EchoPacket(peer.nextPacketId(), p.content));
             } else if (nvp instanceof ProtoPacket p) {
                 for (Message m : p.messages) {
                     if (m instanceof VCRequestMessage vcrq) {
                         // send an acknowledgement posthaste
-                        nm.sendPacket(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRequestAcknowledgeMessage(peer.nextMessageId(), m.message_id))), peer.remote);
+                        NetworkManager.sendPacket(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRequestAcknowledgeMessage(peer.nextMessageId(), m.message_id))), peer.remote);
                         Main.window.tasks.add(() -> {
                             int result = JOptionPane.showOptionDialog(
                                     Main.window,
@@ -43,12 +43,12 @@ public final class ProtocolV0 {
                             );
                             if (result == 1) {
                                 // decline
-                                nm.sendPacket(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRejectMessage(peer.nextMessageId(), vcrq.message_id, "Declined by user"))), peer.remote);
+                                peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRejectMessage(peer.nextMessageId(), vcrq.message_id, "Declined by user"))));
                             } else if (result == 0) {
                                 // accept
                                 final int channel_id = new Random().nextInt();
                                 postconnect(peer, channel_id);
-                                nm.sendPacket(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCAcceptMessage(peer.nextMessageId(), channel_id, vcrq.message_id))), peer.remote);
+                                peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCAcceptMessage(peer.nextMessageId(), channel_id, vcrq.message_id))));
                             }
                         });
                     } else if (m instanceof VCDisconnectMessage vcdm) {
@@ -76,20 +76,20 @@ public final class ProtocolV0 {
     public static void sendEcho(PeerInfo peer) {
         long key = new Random().nextLong();
         pending_echoes.put(key, System.currentTimeMillis());
-        Main.netman.sendPacket(new EchoPacket(peer.nextPacketId(), key), peer.remote);
+        NetworkManager.sendPacket(new EchoPacket(peer.nextPacketId(), key), peer.remote);
     }
     public static void connectVC(PeerInfo peer, String note) {
         final ConnectionMode cm = new ConnectionMode();
         cm.peer = peer;
         cm.mode = NetworkManager.ConnectionMode.Mode.Connecting;
         final VCRequestMessage rqmsg = new VCRequestMessage(cm.request_id = peer.nextMessageId(), note);
-        Main.netman.connectionMode = cm;
+        NetworkManager.connectionMode = cm;
         Main.window.connectionUpdate();
-        Main.netman.addTask(() -> {
+        NetworkManager.addTask(() -> {
             ProtoPacket p = new ProtoPacket(peer.nextPacketId(), Arrays.asList(rqmsg));
-            Main.netman.sendPacket(p, peer.remote);
+            NetworkManager.sendPacket(p, peer.remote);
         });
-        Main.netman.addPacketHook((packet, peer2) -> {
+        NetworkManager.addPacketHook((packet, peer2) -> {
             if (peer2 != peer) return false;
             if (!(packet instanceof ProtoPacket)) return false;
             for (Message m : ((ProtoPacket) packet).messages) {
@@ -105,7 +105,7 @@ public final class ProtocolV0 {
             }
             return false;
         });
-        Main.netman.addPacketHook((packet, peer2) -> {
+        NetworkManager.addPacketHook((packet, peer2) -> {
             if (peer2 != peer) return false;
             if (!(packet instanceof ProtoPacket)) return false;
             for (Message m : ((ProtoPacket) packet).messages) {
@@ -133,24 +133,24 @@ public final class ProtocolV0 {
         cm.mode = ConnectionMode.Mode.Connected;
         cm.peer = peer;
         cm.channel_id = channel_id;
-        Main.netman.connectionMode = cm;
+        NetworkManager.connectionMode = cm;
         Main.window.connectionUpdate();
         AudioManager.setActiveInputConsumer(data -> {
-            Main.netman.sendPacket(new DataPacket(peer.nextPacketId(), channel_id, cm.sequence++, data), peer.remote);
+            NetworkManager.sendPacket(new DataPacket(peer.nextPacketId(), channel_id, cm.sequence++, data), peer.remote);
         });
         AudioManager.getOutputDriver().silenced = false;
         peer.last_connect_time = System.currentTimeMillis();
         Main.window.peersUpdate();
     }
     public static void disconnect() {
-        if (Main.netman.connectionMode == null) return;
-        if (Main.netman.connectionMode instanceof ConnectionMode cm) {
+        if (NetworkManager.connectionMode == null) return;
+        if (NetworkManager.connectionMode instanceof ConnectionMode cm) {
             if (!cm.mode.finalized) {
-                Main.netman.sendPacket(new ProtoPacket(cm.peer.nextPacketId(), Arrays.asList(new VCDisconnectMessage(cm.peer.nextMessageId()))), cm.peer.remote);
+                NetworkManager.sendPacket(new ProtoPacket(cm.peer.nextPacketId(), Arrays.asList(new VCDisconnectMessage(cm.peer.nextMessageId()))), cm.peer.remote);
             }
             AudioManager.setActiveInputConsumer(null);
             AudioManager.getOutputDriver().silenced = true;
-            Main.netman.connectionMode = null;
+            NetworkManager.connectionMode = null;
             Main.window.connectionUpdate();
             cm.peer.last_connect_time = System.currentTimeMillis();
         }

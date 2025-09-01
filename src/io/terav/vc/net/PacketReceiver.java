@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class PacketReceiver implements Runnable {
+public final class PacketReceiver implements Runnable {
     public final LinkedBlockingQueue<Entry<InetAddress,Packet>> packets = new LinkedBlockingQueue<>();
     public final Thread thread;
     private final DatagramSocket socket;

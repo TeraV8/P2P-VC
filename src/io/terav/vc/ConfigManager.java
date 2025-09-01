@@ -77,7 +77,7 @@ public final class ConfigManager {
                 } catch (NumberFormatException e) {}
                 hashCodes.put(peer.runtime_id, peer.hashCode());
                 fileNames.put(peer.runtime_id, peerFile.getName());
-                Main.netman.registerPeer(peer, true);
+                NetworkManager.registerPeer(peer, true);
             } catch (UnknownHostException e) {
                 System.err.println("Peer file " + peerFile.getName() + " contained invalid address");
             } catch (IOException ioe) {
@@ -91,7 +91,7 @@ public final class ConfigManager {
             } catch (IOException ioe) {
                 System.err.println("Failed to save app.cfg: " + ioe.toString());
             }
-            for (PeerInfo peer : Main.netman.getPeers()) {
+            for (PeerInfo peer : NetworkManager.getPeers()) {
                 if (!Integer.valueOf(peer.hashCode()).equals(hashCodes.get(peer.runtime_id))) {
                     System.out.println(peer.getName() + " was modified");
                     File peerFile = new File(peersDir, fileNames.getOrDefault(peer.runtime_id, peer.runtime_id + ".cfg"));

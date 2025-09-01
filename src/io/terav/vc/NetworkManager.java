@@ -1,5 +1,6 @@
 package io.terav.vc;
 
+import io.terav.vc.net.DiscoveryManager;
 import io.terav.vc.net.Packet;
 import io.terav.vc.net.PacketReceiver;
 import io.terav.vc.net.PeerInfo;
@@ -9,7 +10,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,33 +21,21 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiPredicate;
 import javax.swing.JOptionPane;
 
-public class NetworkManager implements Runnable {
-    public ConnectionMode connectionMode = null;
-    private final DiscoveryManager discoman;
-    private final DatagramSocket socket;
-    public final Thread thread;
-    private final ConcurrentLinkedQueue<Runnable> tasks = new ConcurrentLinkedQueue<>();
-    private final PacketReceiver pakr;
-    private boolean running = true; // you'd better go catch it then
-    private final Map<InetAddress, PeerInfo> peers = Collections.synchronizedMap(new HashMap<>());
-    private final List<BiPredicate<Packet,PeerInfo>> hooks = Collections.synchronizedList(new ArrayList<>());
+public final class NetworkManager implements Runnable {
+    public static ConnectionMode connectionMode = null;
+    private static DatagramSocket socket;
+    private static Thread thread;
+    private static final ConcurrentLinkedQueue<Runnable> tasks = new ConcurrentLinkedQueue<>();
+    private static PacketReceiver pakr;
+    private static boolean running = true; // you'd better go catch it then
+    private static final Map<InetAddress, PeerInfo> peers = Collections.synchronizedMap(new HashMap<>());
+    private static final List<BiPredicate<Packet,PeerInfo>> hooks = Collections.synchronizedList(new ArrayList<>());
     
-    private NetworkManager() {
-        try {
-            this.socket = new DatagramSocket(31416, InetAddress.getByAddress(new byte[4]));
-        } catch (SocketException | UnknownHostException ex) {
-            throw new RuntimeException("Could not open socket", ex);
-        }
-        this.pakr = new PacketReceiver(this.socket);
-        this.thread = new Thread(this);
-        this.thread.setName("NetworkManager");
-        this.thread.setDaemon(true);
-        this.discoman = new DiscoveryManager();
-    }
+    private NetworkManager() {}
     
     @Override
     public void run() {
-        discoman.thread.start();
+        DiscoveryManager.start();
         while (running) {
             while (tasks.isEmpty()) {
                 Entry<InetAddress,Packet> p;
@@ -68,52 +56,53 @@ public class NetworkManager implements Runnable {
             if (task == null) continue;
             task.run();
         }
+        thread = null;
     }
     
-    public PeerInfo getPeer(InetAddress remote) {
+    public static PeerInfo getPeer(InetAddress remote) {
         PeerInfo pi = peers.get(remote);
         if (pi != null) return pi;
         pi = new PeerInfo(remote);
         peers.put(remote, pi);
         Main.window.peersUpdate();
-        discoman.thread.interrupt();
+        DiscoveryManager.interrupt();
         return pi;
     }
-    public Collection<PeerInfo> getPeers() {
+    public static Collection<PeerInfo> getPeers() {
         return Collections.unmodifiableCollection(peers.values());
     }
-    public void addPacketHook(BiPredicate<Packet,PeerInfo> hook) {
+    public static void addPacketHook(BiPredicate<Packet,PeerInfo> hook) {
         if (hook == null) throw new NullPointerException();
         hooks.add(hook);
     }
-    public void addTask(Runnable task) {
+    public static void addTask(Runnable task) {
         tasks.add(task);
         thread.interrupt();
     }
     
-    public void sendPacket(Packet p, InetAddress dest) {
+    public static void sendPacket(Packet p, InetAddress dest) {
         addTask(new SendPacketTask(p, dest));
     }
-    public void connectVC(InetAddress remote, String note) {
+    public static void connectVC(InetAddress remote, String note) {
         if (connectionMode != null && !connectionMode.mode.finalized)
             ProtocolV0.disconnect();
         ProtocolV0.connectVC(getPeer(remote), note);
     }
-    public void disconnectVC() {
+    public static void disconnectVC() {
         ProtocolV0.disconnect();
     }
-    public PeerInfo getConnectedPeer() {
+    public static PeerInfo getConnectedPeer() {
         if (connectionMode == null) return null;
         if (connectionMode.mode.finalized) return null;
         return connectionMode.peer;
     }
     
-    void registerPeer(PeerInfo pi, boolean suppressUpdate) {
+    static void registerPeer(PeerInfo pi, boolean suppressUpdate) {
         peers.put(pi.remote, pi);
-        discoman.thread.interrupt();
+        DiscoveryManager.interrupt();
         if (!suppressUpdate) Main.window.peersUpdate();
     }
-    void forgetPeer(PeerInfo peer) {
+    static void forgetPeer(PeerInfo peer) {
         if (!peers.containsValue(peer)) return;
         if (getConnectedPeer() == peer)
             disconnectVC();
@@ -121,24 +110,27 @@ public class NetworkManager implements Runnable {
         Main.window.peersUpdate();
         ConfigManager.deletePeerConfig(peer);
     }
-    void stop() {
+    static void stop() {
         disconnectVC();
         running = false;
         thread.interrupt();
     }
     
-    static NetworkManager start() {
-        NetworkManager nm;
+    static void start() {
         try {
-            nm = new NetworkManager();
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof BindException)
-                JOptionPane.showMessageDialog(null, "Failed to open socket!\nP2P-VC may already be running.\nClose other instances, then try again.", "Failed to open socket", JOptionPane.ERROR_MESSAGE);
-            throw e;
+            socket = new DatagramSocket(31416);
+        } catch (BindException e) {
+            JOptionPane.showMessageDialog(null, "Failed to open socket!\nP2P-VC may already be running.\nClose other instances, then try again.", "Failed to open socket", JOptionPane.ERROR_MESSAGE);
+        } catch (SocketException e) {
+            JOptionPane.showMessageDialog(null, "Failed to open socket!\nCheck your network connection and try again.", "Failed to open socket", JOptionPane.ERROR_MESSAGE);
         }
-        nm.pakr.thread.start();
-        Packet.activateProtocolProcessor((byte) -1, nm);
-        return nm;
+        thread = new Thread(new NetworkManager());
+        thread.setName("NetworkManager");
+        thread.setDaemon(true);
+        pakr = new PacketReceiver(socket);
+        thread.start();
+        pakr.thread.start();
+        Packet.activateProtocolProcessor((byte) -1);
     }
 
     public static abstract class ConnectionMode {
@@ -167,7 +159,7 @@ public class NetworkManager implements Runnable {
         }
     }
     
-    public class SendPacketTask implements Runnable {
+    public static final class SendPacketTask implements Runnable {
         private final Packet packet;
         private final InetAddress remote;
         private int attempts = 0;

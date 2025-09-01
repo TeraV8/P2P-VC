@@ -186,7 +186,7 @@ public class AppWindow extends JFrame implements Runnable {
                 item_discon = new JMenuItem("Disconnect");
                 item_discon.setEnabled(false);
                 item_discon.addActionListener(e -> {
-                    Main.netman.disconnectVC();
+                    NetworkManager.disconnectVC();
                 });
                 menu_net.add(item_discon);
                 menu_net.addSeparator();
@@ -272,7 +272,7 @@ public class AppWindow extends JFrame implements Runnable {
             conn_discon.setMaximumSize(new Dimension(80, 40));
             conn_discon.setEnabled(false);
             conn_discon.addActionListener(e -> {
-                Main.netman.disconnectVC();
+                NetworkManager.disconnectVC();
             });
             connection.add(conn_discon);
         add(connection, BorderLayout.NORTH);
@@ -312,8 +312,8 @@ public class AppWindow extends JFrame implements Runnable {
             JMenuItem ctx_vcc = new JMenuItem("Connect");
             ctx_vcc.addActionListener(e -> {
                 final PeerInfo peer = peerlist.get(channels.getSelectedIndex());
-                if (peer == Main.netman.getConnectedPeer())
-                    Main.netman.disconnectVC();
+                if (peer == NetworkManager.getConnectedPeer())
+                    NetworkManager.disconnectVC();
                 else
                     modal_dconn.prompt(peer.remote.getHostAddress());
             });
@@ -331,10 +331,10 @@ public class AppWindow extends JFrame implements Runnable {
                 if (bounds != null && bounds.contains(e.getPoint())) {
                     final PeerInfo peer = peerlist.get(selection);
                     if (e.getButton() == 3) {
-                        ctx_vcc.setText((peer == Main.netman.getConnectedPeer()) ? "Disconnect" : "Connect");
+                        ctx_vcc.setText((peer == NetworkManager.getConnectedPeer()) ? "Disconnect" : "Connect");
                         peer_ctx.show(channels, e.getX(), e.getY());
                     } else if (e.getClickCount() == 2 && e.getButton() == 1) {
-                        if (peer != Main.netman.getConnectedPeer())
+                        if (peer != NetworkManager.getConnectedPeer())
                             modal_dconn.prompt(peer.remote.getHostAddress());
                     }
                 }
@@ -354,13 +354,13 @@ public class AppWindow extends JFrame implements Runnable {
                 ctx.fillRect(0, 0, getWidth(), 1);
                 ctx.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
                 ctx.setColor(Color.black);
-                final String name = (Main.netman.connectionMode == null) ? null : Main.netman.connectionMode.peer.getName();
-                String status = (Main.netman.connectionMode == null) ? "Standby" : switch (Main.netman.connectionMode.mode) {
+                final String name = (NetworkManager.connectionMode == null) ? null : NetworkManager.connectionMode.peer.getName();
+                String status = (NetworkManager.connectionMode == null) ? "Standby" : switch (NetworkManager.connectionMode.mode) {
                     case Connecting -> "Connecting to " + name + "...";
                     case Failed -> "Failed to connect to " + name;
                     case Waiting -> "Waiting to connect to " + name;
                     case Connected -> "Connected to " + name;
-                    default -> "" + Main.netman.connectionMode.mode;
+                    default -> "" + NetworkManager.connectionMode.mode;
                 };
                 ctx.drawString(status, getWidth() - 200, 13);
             }
@@ -369,7 +369,7 @@ public class AppWindow extends JFrame implements Runnable {
         add(statusBar, BorderLayout.SOUTH);
     }
     public void peersUpdate() {
-        peerlist = new ArrayList<>(Main.netman.getPeers());
+        peerlist = new ArrayList<>(NetworkManager.getPeers());
         peerlist.sort((a,b) -> {
             if (a.last_connect_time != b.last_connect_time) return Long.signum(b.last_connect_time - a.last_connect_time);
             return a.getName().compareTo(b.getName());
@@ -385,15 +385,15 @@ public class AppWindow extends JFrame implements Runnable {
         channels.setSelectedIndex(index);
     }
     public void connectionUpdate() {
-        final boolean connected = Main.netman.connectionMode != null && !Main.netman.connectionMode.mode.finalized;
+        final boolean connected = NetworkManager.connectionMode != null && !NetworkManager.connectionMode.mode.finalized;
         item_discon.setEnabled(connected);
         conn_discon.setEnabled(connected);
         if (connected) {
-            conn_label.setText(switch (Main.netman.connectionMode.mode) {
+            conn_label.setText(switch (NetworkManager.connectionMode.mode) {
                 case Connecting -> "Connecting...";
                 case Waiting -> "Waiting for accept...";
-                case Connected -> "Connected to " + Main.netman.connectionMode.peer.getName();
-                default -> "" + Main.netman.connectionMode.mode;
+                case Connected -> "Connected to " + NetworkManager.connectionMode.peer.getName();
+                default -> "" + NetworkManager.connectionMode.mode;
             });
         } else {
             conn_label.setText("Not connected");
@@ -401,7 +401,7 @@ public class AppWindow extends JFrame implements Runnable {
         tasks.add(new RepaintStatusBarTask());
     }
     private void appControlExit() {
-        Main.netman.stop();
+        NetworkManager.stop();
         System.exit(0);
     }
 
@@ -467,7 +467,7 @@ public class AppWindow extends JFrame implements Runnable {
             forget.addActionListener(e -> {
                 int opt = JOptionPane.showConfirmDialog(PeerInfoDialog.this, "Are you sure you want to forget " + peer.getName(), "Confirm forget peer", JOptionPane.WARNING_MESSAGE, JOptionPane.YES_NO_OPTION);
                 if (opt == JOptionPane.YES_OPTION) {
-                    Main.netman.forgetPeer(peer);
+                    NetworkManager.forgetPeer(peer);
                     setVisible(false);
                 }
             });
@@ -621,7 +621,7 @@ public class AppWindow extends JFrame implements Runnable {
                             return;
                         }
                         setVisible(false);
-                        Main.netman.connectVC(addr, note.getText());
+                        NetworkManager.connectVC(addr, note.getText());
                     } catch (UnknownHostException ex) {
                         address.setBackground(Color.pink);
                         status.setText("Invalid IP address");
@@ -641,11 +641,11 @@ public class AppWindow extends JFrame implements Runnable {
             add(cancel, gbc);
         }
         private void prompt(String addr) {
-            final PeerInfo connected = Main.netman.getConnectedPeer();
+            final PeerInfo connected = NetworkManager.getConnectedPeer();
             if (connected != null) {
                 int opt = JOptionPane.showConfirmDialog(AppWindow.this, "Disconnect from " + connected.getName() + "?", "Confirm disconnect", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
                 if (opt == JOptionPane.CANCEL_OPTION) return;
-                Main.netman.disconnectVC();
+                NetworkManager.disconnectVC();
             }
             address.setText(addr);
             note.setText("");

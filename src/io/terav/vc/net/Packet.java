@@ -51,12 +51,12 @@ public abstract class Packet {
         };
     }
     
-    public static synchronized void activateProtocolProcessor(byte version, NetworkManager man) {
+    public static synchronized void activateProtocolProcessor(byte version) {
         if (version == -1) version = HIGHEST_PROTOVER;
         if ((version & 0xFF) > HIGHEST_PROTOVER) throw new UnsupportedOperationException("Protocol version " + (version & 0xFF) + " not supported");
         if (activatedProtocolProcessors[version]) return;
         switch (version) {
-            case 0 -> ProtocolV0.activateProtocolProcessor(man);
+            case 0 -> ProtocolV0.activateProtocolProcessor();
         }
         activatedProtocolProcessors[version] = true;
     }
