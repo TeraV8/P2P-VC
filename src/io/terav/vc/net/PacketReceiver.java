@@ -13,8 +13,6 @@ public final class PacketReceiver implements Runnable {
     public final LinkedBlockingQueue<Entry<InetAddress,Packet>> packets = new LinkedBlockingQueue<>();
     public final Thread thread;
     private final DatagramSocket socket;
-    private boolean received_packets_loopok = false;
-    private int received_packets_index = 0;
     private final HashMap<InetAddress, Integer> last_received_packet = new HashMap<>();
     
     public PacketReceiver(DatagramSocket socket) {
