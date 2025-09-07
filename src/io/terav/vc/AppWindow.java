@@ -505,12 +505,12 @@ public class AppWindow extends JFrame implements Runnable {
         
         private AppInfoDialog() {
             super(AppWindow.this, "About P2P-VC", false);
-            setSize(350, 200);
+            setSize(350, 220);
             setResizable(false);
             setLayout(new BorderLayout());
             contents = new JLabel();
             contents.setFont(contents.getFont().deriveFont(Font.PLAIN));
-            contents.setText("<html><h1>P2P-VC</h1><p>Version " + Main.VERSION + "<br>Open-source peer-to-peer voice communication<br>Created by TeraV<br><a href>https://github.com/TeraV8/P2P-VC</a></p>");
+            contents.setText("<html><h1>P2P-VC</h1><p>Version " + Main.VERSION + "<br>Open-source peer-to-peer voice communication<br>Created by TeraV<br>Using GNU General Public License v3<br><a href>https://github.com/TeraV8/P2P-VC</a></p>");
             add(contents, BorderLayout.CENTER);
             JPanel buttonPane = new JPanel();
             JButton github = new JButton("GitHub Repo");
