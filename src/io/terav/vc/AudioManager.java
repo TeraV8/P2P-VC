@@ -21,7 +21,7 @@ public class AudioManager {
     static StreamOutputDriver activeOutputLine = null;
     static Consumer<byte[]> activeInputConsumer = null;
     static final AudioFormat audioFormat = new AudioFormat(24000.0f, 8, 1, true, false);
-    static int bufferSize = (int) (audioFormat.getSampleRate() * 0.040); // 40 millis
+    static int bufferSize = (int) (audioFormat.getSampleRate() * 0.40); // 40 millis
     
     static void start() {
         String lastInputDevice = ConfigManager.getStringProperty("input.device", "nonexistent device");

@@ -32,6 +32,17 @@ public class StreamInputDriver implements Runnable {
                     System.arraycopy(data, 0, t, 0, count);
                     data = t;
                 }
+                final int MAG_THRESHOLD_CENTER = 5;
+                final int MAG_THRESHOLD_OUTER = 2;
+                final int radius = 120;
+                outer:
+                for (int i = radius; i < count - radius; i++) {
+                    if (data[i] > MAG_THRESHOLD_CENTER || data[i] < -MAG_THRESHOLD_CENTER) continue;
+                    for (int j = -radius; j < 0; j++) {
+                        if (data[i + j] > MAG_THRESHOLD_OUTER || data[i + j] < -MAG_THRESHOLD_OUTER) continue outer;
+                    }
+                    data[i] = 0;
+                }
                 output.accept(data);
             }
             if (count < this.bufferSize) {
