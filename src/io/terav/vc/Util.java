@@ -26,6 +26,18 @@ public class Util {
         return !interrupted;
     }
     /**
+     * Suspends thread execution for the specified nanoseconds. Does not utilize <code>Thread.sleep()</code>.
+     * @param millis The time, in milliseconds, to wait
+     * @param nanos The number of nanoseconds to wait, in addition to the milliseconds
+     * @return The time passed, in nanoseconds
+     */
+    public static long sleepPrecise(long nanos) {
+        long now = System.nanoTime();
+        while (System.nanoTime() - now < nanos)
+            Thread.yield();
+        return System.nanoTime() - now;
+    }
+    /**
      * Suspends thread execution until the specified time
      * @param time The time to resume execution, according to {@link java.lang.System#currentTimeMillis()}
      * @return {@code false} if the thread was suspended for the requested duration, or {@code true} if it was interrupted
