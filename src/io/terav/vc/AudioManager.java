@@ -84,7 +84,7 @@ public class AudioManager {
             TargetDataLine sdl = (TargetDataLine) m.getLine(new Line.Info(TargetDataLine.class));
             sdl.open(audioFormat, bufferSize);
             activeInputLine = new StreamInputDriver(sdl, b -> {
-                if (activeInputConsumer != null) activeInputConsumer.accept(ConfigManager.getBooleanProperty("input.mute", false) ? new byte[b.length] : b);
+                if (activeInputConsumer != null) activeInputConsumer.accept(ConfigManager.getBooleanProperty("input.mute", false) ? new byte[0] : b);
             });
             sdl.start();
             activeInputLine.thread.start();
