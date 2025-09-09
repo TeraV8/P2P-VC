@@ -3,7 +3,6 @@ package io.terav.vc;
 import io.terav.vc.net.PeerInfo;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -13,7 +12,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
@@ -25,19 +23,14 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
-import java.time.Duration;
-import java.time.Period;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -66,7 +59,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
@@ -192,7 +184,6 @@ public class AppWindow extends JFrame implements Runnable {
                 menu_net.addSeparator();
                 JMenuItem item_showip = new JMenuItem("Show IP address");
                 item_showip.addActionListener(e -> {
-                    // TODO
                     InetAddress addr = null;
                     try {
                         addr = InetAddress.getLocalHost();
@@ -247,7 +238,6 @@ public class AppWindow extends JFrame implements Runnable {
             }
         };
         connection.setPreferredSize(new Dimension(-1, 60));
-        //connection.setLayout(new GridLayout(1, 6, 10, 10));
         connection.setLayout(new BoxLayout(connection, BoxLayout.X_AXIS));
             conn_label = new JLabel("Not connected");
             connection.add(conn_label);
@@ -501,14 +491,12 @@ public class AppWindow extends JFrame implements Runnable {
         }
     }
     private final class AppInfoDialog extends JDialog {
-        private JLabel contents;
-        
         private AppInfoDialog() {
             super(AppWindow.this, "About P2P-VC", false);
             setSize(350, 220);
             setResizable(false);
             setLayout(new BorderLayout());
-            contents = new JLabel();
+            JLabel contents = new JLabel();
             contents.setFont(contents.getFont().deriveFont(Font.PLAIN));
             contents.setText("<html><h1>P2P-VC</h1><p>Version " + Main.VERSION + "<br>Open-source peer-to-peer voice communication<br>Created by TeraV<br>Using GNU General Public License v3<br><a href>https://github.com/TeraV8/P2P-VC</a></p>");
             add(contents, BorderLayout.CENTER);
@@ -517,7 +505,7 @@ public class AppWindow extends JFrame implements Runnable {
             github.addActionListener(e -> {
                 try {
                     Desktop.getDesktop().browse(new URI("https://github.com/TeraV8/P2P-VC"));
-                } catch (Exception ex) {}
+                } catch (IOException | URISyntaxException ex) {}
             });
             JButton update = new JButton("Check for updates");
             update.addActionListener(e -> {
@@ -538,7 +526,7 @@ public class AppWindow extends JFrame implements Runnable {
                         if (newver[i].compareTo(oldver[i]) > 0) {
                             try {
                                 Desktop.getDesktop().browse(new URI("https://github.com/TeraV8/P2P-VC/releases/tag/v" + new String(data).trim()));
-                            } catch (Exception ex) {}
+                            } catch (IOException | URISyntaxException ex) {}
                             updates = true;
                             break;
                         }
@@ -605,28 +593,23 @@ public class AppWindow extends JFrame implements Runnable {
             connect.addActionListener(e -> {
                 address.setBackground(Color.white);
                 status.setText(" ");
-                //if (!address.getText().matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) {
-                //    address.setBackground(Color.pink);
-                //    status.setText("Invalid IP address");
-                //} else {
-                    try {
-                        InetAddress addr = InetAddress.getByName(address.getText());
-                        if (addr.isAnyLocalAddress() || addr.isMulticastAddress()) {
-                            address.setBackground(Color.pink);
-                            status.setText("Cannot connect to this address");
-                            //return;
-                        }
-                        if (note.getText().length() > 250) {
-                            JOptionPane.showMessageDialog(this, "Message is too long!", "Message too long", JOptionPane.WARNING_MESSAGE);
-                            return;
-                        }
-                        setVisible(false);
-                        NetworkManager.connectVC(addr, note.getText());
-                    } catch (UnknownHostException ex) {
+                try {
+                    InetAddress addr = InetAddress.getByName(address.getText());
+                    if (addr.isAnyLocalAddress() || addr.isMulticastAddress()) {
                         address.setBackground(Color.pink);
-                        status.setText("Invalid IP address");
+                        status.setText("Cannot connect to this address");
+                        //return;
                     }
-                //}
+                    if (note.getText().length() > 250) {
+                        JOptionPane.showMessageDialog(this, "Message is too long!", "Message too long", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    setVisible(false);
+                    NetworkManager.connectVC(addr, note.getText());
+                } catch (UnknownHostException ex) {
+                    address.setBackground(Color.pink);
+                    status.setText("Invalid IP address");
+                }
             });
             JButton cancel = new JButton("Cancel");
             cancel.addActionListener(e -> {
