@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>P2P-VC</title>
+        <style type="text/css">
+            :root {
+                background-color: #111;
+            }
+            body {
+                background-color: #222;
+                color: #eee;
+                width: 60%;
+                min-width: 400px;
+                max-width: 800px;
+                margin: auto;
+                padding: 50px;
+                font-family: geneva, tahoma, sans-serif;
+                border-left: 1px dashed #555;
+                border-right: 1px dashed #555;
+            }
+            header {
+                text-align: center;
+            }
+            header > h1 {
+                font-size: 3em;
+            }
+            header > * {
+                margin: 0;
+            }
+            h1, h2, h3, h4 {
+                font-weight: normal;
+            }
+            a {
+                text-decoration: none;
+                color: #0ff;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+            img:not(.inline) {
+                display: block;
+            }
+            .command {
+                display: inline-block;
+                font-size: 0.8em;
+                background-color: #000;
+                padding: 0.1em;
+            }
+        </style>
+        <style type="text/css" media="prefers-color-scheme: light">
+            :root {
+                background-color: #eee;
+            }
+            body {
+                background-color: #fff;
+                color: #111;
+            }
+            a {
+                color: #01e;
+            }
+            .command {
+                background-color: #eee;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>P2P-VC</h1>
+            <h4>Peer-to-peer voice communication program written in Java</h4>
+        </header>
+        <h3 style="text-align:center"><a href="https://www.github.com/TeraV8/P2P-VC/releases">Download</a></h3>
+        <h1 id="about">Motivation</h1>
+        <p>
+            We're in the decline of the Information Age. The Internet was once blissful, bare-bones websites and plaintext emails, but
+            lately it has become a necessary evil due to the numerous bad actors and greedy companies pretending that universal human rights
+            legislation doesn't apply to the Internet. Instead, fierce corporatism has turned the Internet into a purely commercial domain,
+            and anything and everything we do on the Internet is the property of the multi-billion companies that run it.<br>
+            I am among many that wish the Internet to return to a simpler time, when communication was largely peer-driven, and large-scale
+            servers with content moderation wasn't necessary to facilitate you having a good time with your friends over the Internet. If
+            phone calls don't need content restrictions, then why should online communication?<br>
+            This project seeks to restore a piece of what we have lost, and allows you to chat with your friends without anyone else deciding
+            what you can and can't do with your computer, and your Internet connection. I hope for the Internet to be a better place
+            with or without this project, and we can all achieve this goal if we work together, and prefer the humble, free, open-source methods
+            of surfing the Internet, rather than flashy, monopolistic, restrictive mechanisms designed to ransom you your freedom.<br>
+            Happy surfing!
+        </p>
+        <h1 id="install">Installation</h1>
+        <p>
+            To use P2P-VC, you need Java 21. You can install it from Oracle (as JDK) <a href="https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html" target="_blank">here</a>.<br>
+            Once you have Java 21 installed, download the latest version's JAR file from <a href="https://www.github.com/TeraV8/P2P-VC/releases" target="_blank">the Releases page</a>. Double-click the JAR file, and it will set up its initial configuration.<br>
+            The JAR file is a portable application, so keep it on your desktop, or somewhere easily accessible. You may create a shortcut to it on your desktop or in your Start Menu.<br>
+            To update the application in the future, download the newer version's JAR file from the link above, and delete the old JAR file.
+        </p>
+        <h1 id="usage">Using P2P-VC</h1>
+        <p>
+            P2P-VC makes use of <a href="https://en.wikipedia.org/wiki/Hole_punching_(networking)">NAT hole-punching</a> to open and maintain a connection between peers.
+            If the peer is already in your contacts list (on the left), the application automatically attempts to maintain the link with the peer.
+            The entry will display a green light if the connection was successful, or a red light if it couldn't be reached (see image below).
+        </p>
+        <img src="peerlist2.png">
+        <p>
+            If the peer you want to connect to isn't in your contacts list, you need to exchange your IP addresses.
+            Go to <span class="command">Network &gt; Show IP address</span>. (Note: if your web browser opens and an IPv6 address is available, use that one.)
+        </p>
+        <img src="ipaddr1.png">
+        <p>
+            Have your peer do the same, and exchange IP addresses. Then both of you will go to <span class="command">Network &gt; Connect to peer...</span> and enter the IP address you received from one another.
+        </p>
+        <img src="connect2.png">
+        <p>
+            Once you connect, your peer will show up in your contacts list. Simply double-click on them to connect to them in the future.
+        </p>
+        <h1 id="contribute">Contributing</h1>
+        <p>
+            I am committed to making this project accessible to as many people as I can. I understand Java is not as universal as it once
+            was, so I encourage you to port this application to platforms and systems that isn't supported here.<br>
+            I will maintain a <a href="p2p-apps.txt" target="_blank">list of open-source, peer-to-peer communication projects</a> related to
+            or derived from this project. If you create a derivative of this project or something similar, please create a pull request adding
+            your project's information to the <span style="white-space:nowrap">list (docs/p2p-apps.txt)</span>. Please also be aware that this
+            project is licensed under <a href="https://github.com/TeraV8/P2P-VC/blob/master/LICENSE.txt">GNU General Public License v3</a>.
+        </p>
+    </body>
+</html>
