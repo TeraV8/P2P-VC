@@ -1,0 +1,4 @@
+The protocol's byte order is LITTLE ENDIAN.
+This was unfortunately how it started, and there's nothing I can do about it now.
+Maybe protocol version 1 will use network byte order, but the header is still unfortunately LITTLE ENDIAN.
+You have been warned.
