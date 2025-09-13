@@ -76,6 +76,7 @@ public final class NetworkManager implements Runnable {
         hooks.add(hook);
     }
     public static void addTask(Runnable task) {
+        if (thread == null) return;
         tasks.add(task);
         thread.interrupt();
     }
