@@ -163,7 +163,8 @@ public final class ProtocolV0 {
             AudioManager.getOutputDriver().silenced = true;
             NetworkManager.connectionMode = null;
             Main.window.connectionUpdate();
-            cm.peer.last_connect_time = System.currentTimeMillis();
+            if (cm.mode == ConnectionMode.Mode.Connected)
+                cm.peer.last_connect_time = System.currentTimeMillis();
         }
     }
     private static class ConnectionMode extends NetworkManager.ConnectionMode {
