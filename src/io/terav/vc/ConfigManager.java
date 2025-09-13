@@ -13,7 +13,6 @@ import java.util.Properties;
 
 public final class ConfigManager {
     private static final Properties master = new Properties();
-    private static final HashMap<Long, Integer> hashCodes = new HashMap<>();
     private static final HashMap<Long, String> fileNames = new HashMap<>();
     private ConfigManager() {}
     
@@ -75,8 +74,8 @@ public final class ConfigManager {
                 try {
                     peer.protover_compat = Short.parseShort(p.getProperty("protover_compat", "-1"));
                 } catch (NumberFormatException e) {}
-                hashCodes.put(peer.runtime_id, peer.hashCode());
                 fileNames.put(peer.runtime_id, peerFile.getName());
+                peer.clearModified();
                 NetworkManager.registerPeer(peer, true);
             } catch (UnknownHostException e) {
                 System.err.println("Peer file " + peerFile.getName() + " contained invalid address");
@@ -92,7 +91,7 @@ public final class ConfigManager {
                 System.err.println("Failed to save app.cfg: " + ioe.toString());
             }
             for (PeerInfo peer : NetworkManager.getPeers()) {
-                if (!Integer.valueOf(peer.hashCode()).equals(hashCodes.get(peer.runtime_id))) {
+                if (peer.modified()) {
                     System.out.println(peer.getName() + " was modified");
                     File peerFile = new File(peersDir, fileNames.getOrDefault(peer.runtime_id, peer.runtime_id + ".cfg"));
                     try (FileOutputStream fout = new FileOutputStream(peerFile)) {

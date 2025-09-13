@@ -3,6 +3,7 @@ package io.terav.vc.net;
 import io.terav.vc.NetworkManager;
 import java.net.InetAddress;
 
+@SuppressWarnings("EqualsAndHashcode")
 public final class PeerInfo {
     /** Runtime-constant identifier for this object */
     public final long runtime_id = System.currentTimeMillis() ^ System.nanoTime();
@@ -18,12 +19,14 @@ public final class PeerInfo {
     public short protover_compat = -1;
     public int last_packet_id = 0;
     public short last_message_id = 0;
-    /** Timestamp of last outboud packet */
+    /** Timestamp of last outbound packet */
     public long last_packet_time = -1;
     /** Timestamp of last packet received */
     public long last_receipt_time = -1;
     /** Timestamp of last connection */
     public long last_connect_time = -1;
+    
+    private long modhash;
     
     public PeerInfo(InetAddress addr) {
         this.remote = addr;
@@ -45,15 +48,28 @@ public final class PeerInfo {
         last_packet_time = System.currentTimeMillis();
     }
     
+    private long getHash() {
+        long hash = remote.hashCode() & 0xFFFF_FFFFL;
+        if (hostname != null) hash ^= hostname.hashCode() & 0xFFFF_FFFFL;
+        if (nickname != null) hash ^= nickname.hashCode() & 0xFFFF_FFFFL;
+        hash <<= 8;
+        hash ^= protover_hi & 0xFFFFL;
+        hash <<= 16;
+        hash ^= protover_compat & 0xFFFFL;
+        hash <<= 8;
+        hash ^= last_receipt_time;
+        hash = (hash >>> 24) | ((hash & 0xFFFFFFL) << 40);
+        hash ^= last_connect_time;
+        return hash;
+    }
+    public boolean modified() {
+        return getHash() != modhash;
+    }
+    public synchronized void clearModified() {
+        modhash = getHash();
+    }
     @Override
     public int hashCode() {
-        int hash = remote.hashCode();
-        if (hostname != null) hash ^= hostname.hashCode();
-        if (nickname != null) hash ^= nickname.hashCode();
-        hash ^= protover_hi << 16;
-        hash ^= protover_compat & 0xFFFF;
-        hash ^= Long.hashCode(last_receipt_time);
-        hash ^= Long.hashCode(last_connect_time);
-        return hash;
+        return Long.hashCode(runtime_id);
     }
 }
