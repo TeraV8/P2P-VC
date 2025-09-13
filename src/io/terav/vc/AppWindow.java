@@ -388,7 +388,7 @@ public class AppWindow extends JFrame implements Runnable {
         } else {
             conn_label.setText("Not connected");
         }
-        tasks.add(new RepaintStatusBarTask());
+        tasks.add(statusBar::repaint);
     }
     private void appControlExit() {
         NetworkManager.stop();
@@ -552,12 +552,6 @@ public class AppWindow extends JFrame implements Runnable {
         public Insets getInsets() {
             final Insets sup = super.getInsets();
             return new Insets(sup.top + 0, sup.left + 10, sup.right + 10, sup.bottom + 10);
-        }
-    }
-    private final class RepaintStatusBarTask implements Runnable {
-        @Override
-        public void run() {
-            statusBar.repaint();
         }
     }
     private class DirectConnectModal extends JDialog {
