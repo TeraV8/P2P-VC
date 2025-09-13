@@ -44,7 +44,7 @@ public final class ProtocolV0 {
                             );
                             if (result == 1) {
                                 // decline
-                                peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRejectMessage(peer.nextMessageId(), vcrq.message_id, "Declined by user"))));
+                                peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRejectMessage(peer.nextMessageId(), vcrq.message_id, ""))));
                             } else if (result == 0) {
                                 // accept
                                 final int channel_id = new Random().nextInt();
