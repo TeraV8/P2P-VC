@@ -1,16 +1,13 @@
 package io.terav.vc.net;
 
-import io.terav.vc.NetworkManager;
 import io.terav.vc.net.v0.PacketV0;
 import io.terav.vc.net.v0.ProtocolV0;
-import java.net.InetSocketAddress;
 
 public abstract class Packet {
     public final int packet_id;
     public final short proto_ver;
     public final byte flags;
     public final byte recipient;
-    InetSocketAddress remote;
     
     public static final byte HIGHEST_PROTOVER = 0;
     private static final boolean[] activatedProtocolProcessors = new boolean[HIGHEST_PROTOVER + 1];
