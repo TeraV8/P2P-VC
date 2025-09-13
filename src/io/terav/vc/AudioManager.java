@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
@@ -39,8 +40,9 @@ public class AudioManager {
         }
         if (!outputDevices.isEmpty()) {
             for (Mixer output : outputDevices) {
-                if (output.getMixerInfo().getName().equals(lastOutputDevice))
+                if (output.getMixerInfo().getName().equals(lastOutputDevice)) {
                     setActiveOutput(output);
+                }
             }
             if (activeOutput == null)
                 setActiveOutput(outputDevices.get(0));
@@ -78,6 +80,7 @@ public class AudioManager {
             throw new NullPointerException();
         if (!inputDevices.contains(m))
             throw new IllegalArgumentException("Device not registered");
+        if (activeInput == m) return;
         if (activeInput != null)
             activeInputLine.stop();
         try {
@@ -88,18 +91,24 @@ public class AudioManager {
             });
             sdl.start();
             activeInputLine.thread.start();
+            if (activeInputLine.line.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                FloatControl volume = (FloatControl) AudioManager.activeInputLine.line.getControl(FloatControl.Type.MASTER_GAIN);
+                volume.setValue(Math.min((float) ConfigManager.getDoubleProperty("input." + m.getMixerInfo().getName() + ".gain", 0.d), volume.getMaximum()));
+            }
             ConfigManager.setStringProperty("input.device", m.getMixerInfo().getName());
         } catch (LineUnavailableException e) {
             activeInput = null;
             return;
         }
         activeInput = m;
+        AudioSettingsDialog.updateAudio();
     }
     static synchronized void setActiveOutput(Mixer m) {
         if (m == null)
             throw new NullPointerException();
         if (!outputDevices.contains(m))
             throw new IllegalArgumentException("Device not registered");
+        if (activeOutput == m) return;
         if (activeOutput != null)
             activeOutputLine.stop();
         try {
@@ -108,12 +117,17 @@ public class AudioManager {
             activeOutputLine = new StreamOutputDriver(sdl);
             sdl.start();
             activeOutputLine.thread.start();
+            if (activeOutputLine.line.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                FloatControl volume = (FloatControl) AudioManager.activeOutputLine.line.getControl(FloatControl.Type.MASTER_GAIN);
+                volume.setValue(Math.min((float) ConfigManager.getDoubleProperty("output." + m.getMixerInfo().getName() + ".gain", 0.d), volume.getMaximum()));
+            }
             ConfigManager.setStringProperty("output.device", m.getMixerInfo().getName());
         } catch (LineUnavailableException e) {
             activeOutput = null;
             return;
         }
         activeOutput = m;
+        AudioSettingsDialog.updateAudio();
     }
     public static void setActiveInputConsumer(Consumer<byte[]> consumer) {
         activeInputConsumer = consumer;

@@ -114,55 +114,12 @@ public class AppWindow extends JFrame implements Runnable {
                     conn_mute.setText(item_mute.getState() ? "Unmute" : "Mute");
                 });
                 menu_aud.add(item_mute);
-                JMenu menu_adev = new JMenu("Audio devices");
-                    JMenuItem item_inphead = new JMenuItem("Input devices");
-                    item_inphead.setEnabled(false);
-                    menu_adev.add(item_inphead);
-                    ButtonGroup group_inpsel = new ButtonGroup();
-                    for (Mixer inpdev : AudioManager.inputDevices) {
-                        JRadioButtonMenuItem item_inpdev = new JRadioButtonMenuItem(inpdev.getMixerInfo().getName());
-                        item_inpdev.addActionListener(e -> AudioManager.setActiveInput(inpdev));
-                        menu_adev.addMenuListener(new MenuListener() {
-                            @Override
-                            public void menuSelected(MenuEvent e) {
-                                item_inpdev.setSelected(AudioManager.activeInput == inpdev);
-                            }
-                            @Override
-                            public void menuDeselected(MenuEvent e) {}
-                            @Override
-                            public void menuCanceled(MenuEvent e) {}
-                        });
-                        group_inpsel.add(item_inpdev);
-                        menu_adev.add(item_inpdev);
-                    }
-                    if (AudioManager.inputDevices.isEmpty()) item_inphead.setText("No input devices found");
-                    JMenuItem item_outhead = new JMenuItem("Output devices");
-                    item_outhead.setEnabled(false);
-                    menu_adev.add(item_outhead);
-                    ButtonGroup group_outsel = new ButtonGroup();
-                    for (Mixer outdev : AudioManager.outputDevices) {
-                        JRadioButtonMenuItem item_outdev = new JRadioButtonMenuItem(outdev.getMixerInfo().getName());
-                        item_outdev.addActionListener(e -> AudioManager.setActiveOutput(outdev));
-                        menu_adev.addMenuListener(new MenuListener() {
-                            @Override
-                            public void menuSelected(MenuEvent e) {
-                                item_outdev.setSelected(AudioManager.activeOutput == outdev);
-                            }
-                            @Override
-                            public void menuDeselected(MenuEvent e) {}
-                            @Override
-                            public void menuCanceled(MenuEvent e) {}
-                        });
-                        group_outsel.add(item_outdev);
-                        menu_adev.add(item_outdev);
-                    }
-                    if (AudioManager.outputDevices.isEmpty()) item_outhead.setText("No output devices found");
-                    menu_adev.add(new JSeparator());
-                    JMenuItem item_devmgmt = new JMenuItem("Audio devices...");
-                    item_devmgmt.setEnabled(false);
-                    item_devmgmt.addActionListener(e -> {}); // TODO
-                    menu_adev.add(item_devmgmt);
-                menu_aud.add(menu_adev);
+                menu_aud.add(new JSeparator());
+                JMenuItem item_audset = new JMenuItem("Audio settings...");
+                item_audset.addActionListener(e -> {
+                    AudioSettingsDialog.showDialog();
+                });
+                menu_aud.add(item_audset);
             menubar.add(menu_aud);
             JMenu menu_net = new JMenu("Network");
                 JMenuItem item_dconn = new JMenuItem("Connect to peer...");
