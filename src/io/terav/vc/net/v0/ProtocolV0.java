@@ -30,6 +30,11 @@ public final class ProtocolV0 {
                 for (Message m : p.messages) {
                     if (m instanceof VCRequestMessage vcrq) {
                         // send an acknowledgement posthaste
+                        if (cm != null && cm.peer == peer) {
+                            // automatic accept
+                            peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCAcceptMessage(peer.nextMessageId(), new Random().nextInt(), vcrq.message_id))));
+                            return false;
+                        }
                         NetworkManager.sendPacket(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRequestAcknowledgeMessage(peer.nextMessageId(), m.message_id))), peer.remote);
                         Main.window.tasks.add(() -> {
                             int result = JOptionPane.showOptionDialog(
