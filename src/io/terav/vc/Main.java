@@ -4,7 +4,7 @@ import java.io.File;
 import javax.swing.JOptionPane;
 
 public class Main {
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "1.1";
     public static AppWindow window;
     public static void main(String[] args) {
         File dataDir = ConfigManager.getDataDir();
