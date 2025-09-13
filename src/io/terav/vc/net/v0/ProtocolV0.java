@@ -13,6 +13,7 @@ import javax.swing.JOptionPane;
 
 public final class ProtocolV0 {
     private static final HashMap<Long, Long> pending_echoes = new HashMap<>();
+    private static final HashMap<Long, Long> downgrade_request_times = new HashMap<>();
     // TODO stuf
     private ProtocolV0() {}
     public static void activateProtocolProcessor() {
@@ -141,6 +142,11 @@ public final class ProtocolV0 {
         AudioManager.getOutputDriver().silenced = false;
         peer.last_connect_time = System.currentTimeMillis();
         Main.window.peersUpdate();
+    }
+    public static void sendDowngradeRequest(PeerInfo peer, boolean immediate) {
+        if (!immediate && (!downgrade_request_times.containsKey(peer.runtime_id) || downgrade_request_times.get(peer.runtime_id) + 5000 < System.currentTimeMillis())) return;
+        downgrade_request_times.put(peer.runtime_id, System.currentTimeMillis());
+        peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new ProtoDowngradeMessage(peer.nextMessageId()))));
     }
     public static void disconnect() {
         if (NetworkManager.connectionMode == null) return;
