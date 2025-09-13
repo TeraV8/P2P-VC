@@ -3,6 +3,7 @@ package io.terav.vc;
 import io.terav.vc.net.PeerInfo;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -68,9 +69,6 @@ public class AppWindow extends JFrame implements Runnable {
     private Icon PEER_ONLINE;
     private Icon PEER_IDLE;
     
-    private DirectConnectModal modal_dconn;
-    private AppInfoDialog dialog_appinfo;
-    private PeerInfoDialog dialog_peerinfo;
     private final JPanel statusBar;
     private final JMenuItem item_discon;
     private final JLabel conn_label;
@@ -87,9 +85,6 @@ public class AppWindow extends JFrame implements Runnable {
         PEER_OFFLINE = new ImageIcon(ClassLoader.getSystemResource("offline.png"));
         PEER_IDLE = new ImageIcon(ClassLoader.getSystemResource("idle.png"));
         
-        this.modal_dconn = new DirectConnectModal();
-        this.dialog_appinfo = new AppInfoDialog();
-        this.dialog_peerinfo = new PeerInfoDialog();
         this.thread = new Thread(this);
         this.thread.setName("UIUtilThread");
         this.thread.setDaemon(true);
@@ -172,7 +167,7 @@ public class AppWindow extends JFrame implements Runnable {
             JMenu menu_net = new JMenu("Network");
                 JMenuItem item_dconn = new JMenuItem("Connect to peer...");
                 item_dconn.addActionListener(e -> {
-                    modal_dconn.prompt("");
+                    ConnectDialog.prompt("");
                 });
                 menu_net.add(item_dconn);
                 item_discon = new JMenuItem("Disconnect");
@@ -218,7 +213,7 @@ public class AppWindow extends JFrame implements Runnable {
             JMenu menu_hlp = new JMenu("Help");
                 JMenuItem item_about = new JMenuItem("About P2P-VC...");
                 item_about.addActionListener(e -> {
-                    dialog_appinfo.open();
+                    AppInfoDialog.open();
                 });
                 menu_hlp.add(item_about);
             menubar.add(menu_hlp);
@@ -305,12 +300,12 @@ public class AppWindow extends JFrame implements Runnable {
                 if (peer == NetworkManager.getConnectedPeer())
                     NetworkManager.disconnectVC();
                 else
-                    modal_dconn.prompt(peer.remote.getHostAddress());
+                    ConnectDialog.prompt(peer.remote.getHostAddress());
             });
             peer_ctx.add(ctx_vcc);
             JMenuItem ctx_info = new JMenuItem("Peer info");
             ctx_info.addActionListener(e -> {
-                dialog_peerinfo.show(peerlist.get(channels.getSelectedIndex()));
+                PeerInfoDialog.show(peerlist.get(channels.getSelectedIndex()));
             });
             peer_ctx.add(ctx_info);
         channels.addMouseListener(new MouseAdapter() {
@@ -325,7 +320,7 @@ public class AppWindow extends JFrame implements Runnable {
                         peer_ctx.show(channels, e.getX(), e.getY());
                     } else if (e.getClickCount() == 2 && e.getButton() == 1) {
                         if (peer != NetworkManager.getConnectedPeer())
-                            modal_dconn.prompt(peer.remote.getHostAddress());
+                            ConnectDialog.prompt(peer.remote.getHostAddress());
                     }
                 }
             }
@@ -401,240 +396,6 @@ public class AppWindow extends JFrame implements Runnable {
             try {
                 tasks.take().run();
             } catch (InterruptedException e) {}
-        }
-    }
-    
-    private final class PeerInfoDialog extends JDialog {
-        private final JLabel address;
-        private final JLabel nickname;
-        private final JLabel conntime;
-        private final JLabel lastonline;
-        private final JLabel protover;
-        private PeerInfo peer;
-        private PeerInfoDialog() {
-            super(AppWindow.this, "Peer information", false);
-            setSize(400, 200);
-            setResizable(false);
-            setLayout(new GridLayout(0, 2, 10, 5));
-            setLocationRelativeTo(AppWindow.this);
-            JLabel label = new JLabel("IP address");
-            label.setHorizontalTextPosition(JLabel.RIGHT);
-            add(label);
-            final Font font = label.getFont().deriveFont(Font.PLAIN);
-            address = new JLabel();
-            address.setFont(font);
-            add(address);
-            label = new JLabel("Local nickname");
-            label.setHorizontalTextPosition(JLabel.RIGHT);
-            add(label);
-            nickname = new JLabel();
-            nickname.setFont(font);
-            add(nickname);
-            label = new JLabel("Last connection time");
-            label.setHorizontalTextPosition(JLabel.RIGHT);
-            add(label);
-            conntime = new JLabel();
-            conntime.setFont(font);
-            add(conntime);
-            label = new JLabel("Last seen online");
-            label.setHorizontalTextPosition(JLabel.RIGHT);
-            add(label);
-            lastonline = new JLabel();
-            lastonline.setFont(font);
-            add(lastonline);
-            label = new JLabel("Known protocol");
-            label.setHorizontalTextPosition(JLabel.RIGHT);
-            add(label);
-            protover = new JLabel();
-            protover.setFont(font);
-            add(protover);
-            JButton connect = new JButton("Connect");
-            connect.addActionListener(e -> {
-                modal_dconn.prompt(peer.remote.getHostAddress());
-            });
-            add(connect);
-            JButton forget = new JButton("Forget");
-            forget.addActionListener(e -> {
-                int opt = JOptionPane.showConfirmDialog(PeerInfoDialog.this, "Are you sure you want to forget " + peer.getName(), "Confirm forget peer", JOptionPane.WARNING_MESSAGE, JOptionPane.YES_NO_OPTION);
-                if (opt == JOptionPane.YES_OPTION) {
-                    NetworkManager.forgetPeer(peer);
-                    setVisible(false);
-                }
-            });
-            add(forget);
-        }
-        private void show(PeerInfo peer) {
-            this.peer = peer;
-            address.setText(peer.remote.toString());
-            nickname.setText(peer.nickname);
-            conntime.setText((peer.last_connect_time == -1L) ? "never" : DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(new Date(peer.last_connect_time)));
-            if (peer.last_receipt_time == -1)
-                lastonline.setText("never");
-            else if (System.currentTimeMillis() - peer.last_receipt_time < 120_000)
-                lastonline.setText("Just now");
-            else {
-                int minutes = (int) ((System.currentTimeMillis() - peer.last_receipt_time) / 60_000);
-                if (minutes < 60)
-                    lastonline.setText(minutes + " minutes ago");
-                else if (minutes < 1440)
-                    lastonline.setText(minutes / 60 + " hours ago");
-                else
-                    lastonline.setText(minutes / 1440 + " days ago");
-            }
-            protover.setText((peer.protover_hi == -1) ? "unknown" : "v" + peer.protover_hi);
-            setVisible(true);
-        }
-        @Override
-        public Insets getInsets() {
-            final Insets sup = super.getInsets();
-            return new Insets(sup.top + 10, sup.left + 10, sup.right + 10, sup.bottom + 10);
-        }
-    }
-    private final class AppInfoDialog extends JDialog {
-        private AppInfoDialog() {
-            super(AppWindow.this, "About P2P-VC", false);
-            setSize(350, 220);
-            setResizable(false);
-            setLayout(new BorderLayout());
-            JLabel contents = new JLabel();
-            contents.setFont(contents.getFont().deriveFont(Font.PLAIN));
-            contents.setText("<html><h1>P2P-VC</h1><p>Version " + Main.VERSION + "<br>Open-source peer-to-peer voice communication<br>Created by TeraV<br>Using GNU General Public License v3<br><a href>https://github.com/TeraV8/P2P-VC</a></p>");
-            add(contents, BorderLayout.CENTER);
-            JPanel buttonPane = new JPanel();
-            JButton github = new JButton("GitHub Repo");
-            github.addActionListener(e -> {
-                try {
-                    Desktop.getDesktop().browse(new URI("https://github.com/TeraV8/P2P-VC"));
-                } catch (IOException | URISyntaxException ex) {}
-            });
-            JButton update = new JButton("Check for updates");
-            update.addActionListener(e -> {
-                update.setEnabled(false);
-                try {
-                    HttpURLConnection conn = (HttpURLConnection) URI.create("https://terav8.github.io/P2P-VC/version").toURL().openConnection();
-                    if (conn.getResponseCode() != 200)
-                        throw new RuntimeException("HTTP response " + conn.getResponseCode());
-                    byte[] data = new byte[conn.getContentLength()];
-                    try (InputStream in = (InputStream) conn.getContent()) {
-                        in.read(data);
-                    }
-                    String[] newver = new String(data).trim().split("[\\.-]");
-                    String[] oldver = Main.VERSION.split("[\\.-]");
-                    boolean updates = false;
-                    for (int i = 0; i < oldver.length; i++) {
-                        if (i >= newver.length) break;
-                        if (newver[i].compareTo(oldver[i]) > 0) {
-                            try {
-                                Desktop.getDesktop().browse(new URI("https://github.com/TeraV8/P2P-VC/releases/tag/v" + new String(data).trim()));
-                            } catch (IOException | URISyntaxException ex) {}
-                            updates = true;
-                            break;
-                        }
-                    }
-                    if (!updates)
-                        JOptionPane.showMessageDialog(AppInfoDialog.this, "P2P-VC is up to date!", "Up to date", JOptionPane.INFORMATION_MESSAGE);
-                } catch (Exception ex) {
-                    System.err.println(ex);
-                    JOptionPane.showMessageDialog(AppInfoDialog.this, "Failed to check for updates", "Update check failed", JOptionPane.ERROR_MESSAGE);
-                }
-                update.setEnabled(true);
-            });
-            buttonPane.add(github);
-            buttonPane.add(update);
-            add(buttonPane, BorderLayout.SOUTH);
-        }
-        private void open() {
-            setLocationRelativeTo(AppWindow.this);
-            setVisible(true);
-            requestFocus();
-        }
-        @Override
-        public Insets getInsets() {
-            final Insets sup = super.getInsets();
-            return new Insets(sup.top + 0, sup.left + 10, sup.right + 10, sup.bottom + 10);
-        }
-    }
-    private class DirectConnectModal extends JDialog {
-        private JTextField address;
-        private JTextArea note;
-        private JLabel status;
-        
-        private DirectConnectModal() {
-            super(AppWindow.this, "Connect to peer", true);
-            setSize(300, 200);
-            setResizable(false);
-            setLocationRelativeTo(AppWindow.this);
-            setLayout(new GridBagLayout());
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridwidth = GridBagConstraints.REMAINDER;
-            gbc.gridheight = 1;
-            gbc.weightx = 1.0;
-            
-            add(new JLabel("Enter connection address and (optional) note"), gbc);
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            add(address = new JTextField(), gbc);
-            gbc.weighty = 1.0;
-            gbc.fill = GridBagConstraints.BOTH;
-            JScrollPane jsp = new JScrollPane(note = new JTextArea(), JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-            note.setLineWrap(true);
-            note.setWrapStyleWord(true);
-            add(jsp, gbc);
-            gbc.weighty = 0.0;
-            gbc.fill = GridBagConstraints.VERTICAL;
-            add(status = new JLabel(" "), gbc);
-            
-            JButton connect = new JButton("Connect");
-            connect.addActionListener(e -> {
-                address.setBackground(Color.white);
-                status.setText(" ");
-                try {
-                    InetAddress addr = InetAddress.getByName(address.getText());
-                    if (addr.isAnyLocalAddress() || addr.isMulticastAddress()) {
-                        address.setBackground(Color.pink);
-                        status.setText("Cannot connect to this address");
-                        //return;
-                    }
-                    if (note.getText().length() > 250) {
-                        JOptionPane.showMessageDialog(this, "Message is too long!", "Message too long", JOptionPane.WARNING_MESSAGE);
-                        return;
-                    }
-                    setVisible(false);
-                    NetworkManager.connectVC(addr, note.getText());
-                } catch (UnknownHostException ex) {
-                    address.setBackground(Color.pink);
-                    status.setText("Invalid IP address");
-                }
-            });
-            JButton cancel = new JButton("Cancel");
-            cancel.addActionListener(e -> {
-                setVisible(false);
-            });
-            gbc.weightx = 1.0;
-            gbc.gridwidth = 1;
-            add(connect, gbc);
-            gbc.weightx = 0.0;
-            add(Box.createHorizontalStrut(10), gbc);
-            gbc.weightx = 1.0;
-            add(cancel, gbc);
-        }
-        private void prompt(String addr) {
-            final PeerInfo connected = NetworkManager.getConnectedPeer();
-            if (connected != null) {
-                int opt = JOptionPane.showConfirmDialog(AppWindow.this, "Disconnect from " + connected.getName() + "?", "Confirm disconnect", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
-                if (opt == JOptionPane.CANCEL_OPTION) return;
-                NetworkManager.disconnectVC();
-            }
-            address.setText(addr);
-            note.setText("");
-            status.setText(" ");
-            address.setBackground(Color.white);
-            setVisible(true);
-            address.requestFocus();
-        }
-        @Override
-        public Insets getInsets() {
-            final Insets sup = super.getInsets();
-            return new Insets(sup.top + 10, sup.left + 10, sup.right + 10, sup.bottom + 10);
         }
     }
 }
