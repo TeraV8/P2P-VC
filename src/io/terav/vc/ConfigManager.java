@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 
 public final class ConfigManager {
@@ -23,6 +24,35 @@ public final class ConfigManager {
         if (!dataDir.getParentFile().exists())
             dataDir = new File(System.getProperty("user.home", ".p2p-vc"));
         return dataDir;
+    }
+    public static ProcessHandle getDuplicateProcess() {
+        File lockFile = new File(getDataDir(), "process.lock");
+        if (!lockFile.exists() | lockFile.length() > 60) return null;
+        try (FileInputStream in = new FileInputStream(lockFile)) {
+            byte[] d = new byte[(int) lockFile.length()];
+            in.read(d);
+            long pid = Long.parseLong(new String(d).trim());
+            ProcessHandle handle = ProcessHandle.of(pid).get();
+            if (handle.isAlive())
+                return handle;
+        } catch (NumberFormatException | NoSuchElementException e) {
+        } catch (IOException ioe) {
+            System.err.println("Failed to read process lock: " + ioe.toString());
+        }
+        return null;
+    }
+    public static void createLock() {
+        File lockFile = new File(getDataDir(), "process.lock");
+        if (lockFile.exists()) lockFile.delete();
+        try {
+            lockFile.createNewFile();
+            try (FileOutputStream out = new FileOutputStream(lockFile)) {
+                out.write(("" + ProcessHandle.current().pid()).getBytes());
+            }
+            lockFile.deleteOnExit();
+        } catch (IOException ioe) {
+            System.err.println("Failed to create process lock: " + ioe.toString());
+        }
     }
     public static void setupConfig() {
         final File dataDir = getDataDir();

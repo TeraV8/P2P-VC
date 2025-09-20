@@ -121,8 +121,9 @@ public final class NetworkManager implements Runnable {
         try {
             socket = new DatagramSocket(31416);
         } catch (BindException e) {
-            JOptionPane.showMessageDialog(null, "Failed to open socket!\nP2P-VC may already be running.\nClose other instances, then try again.", "Failed to open socket", JOptionPane.ERROR_MESSAGE);
-            System.exit(2);
+            //JOptionPane.showMessageDialog(null, "Failed to open socket!\nP2P-VC may already be running.\nClose other instances, then try again.", "Failed to open socket", JOptionPane.ERROR_MESSAGE);
+            //System.exit(2);
+            throw e;
         } catch (SocketException e) {
             JOptionPane.showMessageDialog(null, "Failed to open socket!\nCheck your network connection and try again.", "Failed to open socket", JOptionPane.ERROR_MESSAGE);
             System.exit(2);
