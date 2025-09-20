@@ -117,7 +117,7 @@ public final class NetworkManager implements Runnable {
         thread.interrupt();
     }
     
-    static void start() {
+    static void start() throws BindException {
         try {
             socket = new DatagramSocket(31416);
         } catch (BindException e) {
