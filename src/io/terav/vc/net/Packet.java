@@ -40,11 +40,11 @@ public abstract class Packet {
         return getClass().getSimpleName() + "[packet_id=" + packet_id + ",version=" + Integer.toHexString(this.proto_ver) + "]";
     }
     
-    public static Packet parse(byte[] data, int length) {
+    static Packet parse(byte[] data, int length) {
         if (length < 6) throw new IllegalArgumentException("Data too short");
         return switch (data[5]) {
             case 0 -> PacketV0.parse(data, length);
-            default -> throw new UnsupportedOperationException("Packet version " + data[5] + '.' + data[4] + " not supported");
+            default -> InvalidPacket.parse(data, length);
         };
     }
     

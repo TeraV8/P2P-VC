@@ -44,7 +44,7 @@ public abstract class Message {
                 case (byte) 0xC1 -> IPResponseMessage.parse(message_id, data, offset + 4, length);
                 case (byte) 0xF0 -> ProtoDowngradeMessage.parse(message_id, data, offset + 4, length);
                 case (byte) 0xF2 -> ReceiptMessage.parse(message_id, data, offset + 4, length);
-                default -> throw new IllegalArgumentException("Unrecognized message type " + type);
+                default -> new InvalidMessage(type, message_id);
             };
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new IllegalArgumentException("Data too short", e);
