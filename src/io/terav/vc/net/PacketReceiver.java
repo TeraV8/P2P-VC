@@ -31,12 +31,12 @@ public final class PacketReceiver implements Runnable {
             try {
                 packet.setLength(65504);
                 socket.receive(packet);
-                Packet p = Packet.parse(packet.getData(), packet.getLength());
                 if (packet.getLength() == 8 && packet.getData()[4] == -1 && packet.getAddress().isLoopbackAddress()) {
                     // this is an application packet
                     Main.applicationMessage(packet.getData()[6]);
                     continue;
                 }
+                Packet p = Packet.parse(packet.getData(), packet.getLength());
                 if (last_received_packet.getOrDefault(packet.getAddress(), -1) != p.packet_id) {
                     packets.add(new SimpleEntry(packet.getAddress(), p));
                     last_received_packet.put(packet.getAddress(), p.packet_id);
