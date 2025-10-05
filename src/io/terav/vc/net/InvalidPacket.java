@@ -6,22 +6,28 @@ package io.terav.vc.net;
  * @author vharr
  */
 public final class InvalidPacket extends Packet {
+    /** The packet was invalid due to an undisclosed reason. */
+    public static final int REASON_NONE = 0;
+    /** The packet was invalid due to the data being too short. */
+    public static final int REASON_LENGTH = 1;
+    /** The packet was invalid because it uses a higher version not supported. */
+    public static final int REASON_VERSION_HIGH = 16;
+    /** The packet was invalid because it uses the IPC packet version but was received remotely. */
+    public static final int REASON_VERSION_PROCESS = 17;
+    /** The packet was invalid because it uses a lower version which is no longer supported. */
+    public static final int REASON_VERSION_LOW = 18;
+    /** The packet was invalid due to a malformed packet header. */
+    public static final int REASON_MALFORMED_HEADER = 32;
     
-    private InvalidPacket(int packet_id, short version, byte flags, byte recipient) {
+    public final int reason;
+    
+    public InvalidPacket(int packet_id, short version, byte flags, byte recipient, int reason) {
         super(packet_id, version, flags, recipient);
+        this.reason = reason;
     }
     
     @Override
     protected byte[] data() {
         throw new UnsupportedOperationException("Invalid packets cannot be serialized");
-    }
-    static InvalidPacket parse(byte[] data, int length) {
-        if (length < 8) throw new IllegalArgumentException("Data too short");
-        return new InvalidPacket(
-                ((data[0] & 0xFF) | ((data[1] & 0xFF) << 8) | ((data[2] & 0xFF) << 16) | ((data[3] & 0xFF) << 24)),
-                (short) ((data[4] & 0xFF) | ((data[5] & 0xFF) << 8)),
-                data[6],
-                data[7]
-        );
     }
 }

@@ -41,10 +41,13 @@ public abstract class Packet {
     }
     
     static Packet parse(byte[] data, int length) {
-        if (length < 6) throw new IllegalArgumentException("Data too short");
+        if (length < 8) return new InvalidPacket(0, (short) 0, (byte) 0, (byte) 0, InvalidPacket.REASON_LENGTH);
+        final int packet_id = (data[0] & 0xFF) | ((data[1] & 0xFF) << 8) | ((data[2] & 0xFF) << 16) | ((data[3] & 0xFF) << 24);
+        final short version = (short) ((data[4] & 0xFF) | ((data[5] & 0xFF) << 8));
         return switch (data[5]) {
-            case 0 -> PacketV0.parse(data, length);
-            default -> InvalidPacket.parse(data, length);
+            case 0 -> PacketV0.parse(packet_id, version, data, length);
+            case -1 -> new InvalidPacket(packet_id, version, data[6], data[7], InvalidPacket.REASON_VERSION_PROCESS);
+            default -> new InvalidPacket(packet_id, version, data[6], data[7], InvalidPacket.REASON_VERSION_HIGH);
         };
     }
     
