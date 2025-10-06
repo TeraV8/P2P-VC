@@ -60,6 +60,7 @@ public final class ProtocolV0 {
                     } else if (m instanceof VCDisconnectMessage vcdm) {
                         // the remote wishes to disconnect
                         if (cm != null && cm.peer == peer) {
+                            cm.last_mode_change_time = System.currentTimeMillis();
                             cm.mode = ConnectionMode.Mode.Disconnected;
                             Main.window.connectionUpdate();
                             AudioManager.setActiveInputConsumer(null);
@@ -88,6 +89,7 @@ public final class ProtocolV0 {
         final ConnectionMode cm = new ConnectionMode();
         cm.peer = peer;
         cm.mode = NetworkManager.ConnectionMode.Mode.Connecting;
+        cm.last_mode_change_time = System.currentTimeMillis();
         final VCRequestMessage rqmsg = new VCRequestMessage(cm.request_id = peer.nextMessageId(), note);
         NetworkManager.connectionMode = cm;
         Main.window.connectionUpdate();
@@ -102,6 +104,7 @@ public final class ProtocolV0 {
                 if (m instanceof VCRequestAcknowledgeMessage vcram) {
                     if (vcram.request_id == cm.request_id) {
                         if (cm.mode == ConnectionMode.Mode.Connecting) {
+                            cm.last_mode_change_time = System.currentTimeMillis();
                             cm.mode = ConnectionMode.Mode.Waiting;
                             Main.window.connectionUpdate();
                         }
@@ -122,6 +125,7 @@ public final class ProtocolV0 {
                     }
                 } else if (m instanceof VCRejectMessage vcrm) {
                     if (vcrm.request_id == cm.request_id) {
+                        cm.last_mode_change_time = System.currentTimeMillis();
                         cm.mode = ConnectionMode.Mode.Rejected;
                         Main.window.connectionUpdate();
                         Main.window.tasks.add(() -> {
@@ -139,6 +143,7 @@ public final class ProtocolV0 {
         cm.mode = ConnectionMode.Mode.Connected;
         cm.peer = peer;
         cm.channel_id = channel_id;
+        cm.last_mode_change_time = System.currentTimeMillis();
         NetworkManager.connectionMode = cm;
         Main.window.connectionUpdate();
         AudioManager.setActiveInputConsumer(data -> {

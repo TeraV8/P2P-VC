@@ -32,6 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -334,7 +335,19 @@ public class AppWindow extends JFrame implements Runnable {
             conn_label.setText(switch (NetworkManager.connectionMode.mode) {
                 case Connecting -> "Connecting...";
                 case Waiting -> "Waiting for accept...";
-                case Connected -> "Connected to " + NetworkManager.connectionMode.peer.getName();
+                case Connected -> {
+                    long seconds = (System.currentTimeMillis() - NetworkManager.connectionMode.last_mode_change_time) / 1000;
+                    long minutes = seconds / 60;
+                    seconds %= 60;
+                    String time = "" + seconds;
+                    if (time.length() < 2) time = "0" + time;
+                    time = (minutes % 60) + ":" + time;
+                    if (minutes > 60) {
+                        if (time.length() < 5) time = "0" + time;
+                        time = (minutes / 60) + ":" + time;
+                    }
+                    yield "Connected to " + NetworkManager.connectionMode.peer.getName() + " (" + time + ")";
+                }
                 default -> "" + NetworkManager.connectionMode.mode;
             });
         } else {
@@ -349,9 +362,20 @@ public class AppWindow extends JFrame implements Runnable {
 
     @Override
     public void run() {
+        long last_connection_update_time = System.currentTimeMillis();
         while (true) {
+            Runnable task = tasks.poll();
+            if (task != null) {
+                task.run();
+                continue;
+            }
+            if (System.currentTimeMillis() - last_connection_update_time >= 500) {
+                connectionUpdate();
+                last_connection_update_time = System.currentTimeMillis();
+                continue;
+            }
             try {
-                tasks.take().run();
+                Thread.sleep(10);
             } catch (InterruptedException e) {}
         }
     }

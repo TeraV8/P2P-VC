@@ -140,6 +140,7 @@ public final class NetworkManager implements Runnable {
     public static abstract class ConnectionMode {
         public Mode mode;
         public PeerInfo peer;
+        public long last_mode_change_time;
 
         public ConnectionMode() {}
         public static enum Mode {
