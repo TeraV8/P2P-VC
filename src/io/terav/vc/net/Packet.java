@@ -23,10 +23,17 @@ public abstract class Packet {
     public final byte[] serialize() {
         byte[] data = data();
         byte[] out = new byte[data.length + 8];
-        out[0] = (byte) (packet_id);
-        out[1] = (byte) (packet_id >> 8);
-        out[2] = (byte) (packet_id >> 16);
-        out[3] = (byte) (packet_id >> 24);
+        if ((proto_ver >> 8) == 0) {
+            out[0] = (byte) (packet_id);
+            out[1] = (byte) (packet_id >> 8);
+            out[2] = (byte) (packet_id >> 16);
+            out[3] = (byte) (packet_id >> 24);
+        } else {
+            out[0] = (byte) (packet_id >> 24);
+            out[1] = (byte) (packet_id >> 16);
+            out[2] = (byte) (packet_id >> 8);
+            out[3] = (byte) (packet_id);
+        }
         out[4] = (byte) (proto_ver);
         out[5] = (byte) (proto_ver >> 8);
         out[6] = flags;
