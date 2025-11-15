@@ -1,5 +1,7 @@
 package io.terav.vc.net.v0;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,18 +21,19 @@ public class ProtoPacket extends PacketV0 {
     }
 
     @Override
-    protected byte[] data() {
-        List<byte[]> mdata = messages.stream().map(m -> m.serialize()).toList();
-        int length = 0;
-        for (byte[] d : mdata)
-            length += d.length;
-        byte[] data = new byte[length];
-        int j = 0;
-        for (byte[] d : mdata) {
-            System.arraycopy(d, 0, data, j, d.length);
-            j += d.length;
+    protected void serialize(ByteBuffer buffer) {
+        for (Message m : messages) {
+            int nextPosition = buffer.position() + m.serializedLength() + 4;
+            m.serialize(buffer.slice(buffer.position(), m.serializedLength() + 4).order(ByteOrder.LITTLE_ENDIAN));
+            buffer.position(nextPosition);
         }
-        return data;
+    }
+    @Override
+    protected int serializedLength() {
+        int length = 0;
+        for (Message m : messages)
+            length += m.serializedLength() + 4;
+        return length;
     }
     
     @Override
@@ -41,14 +44,11 @@ public class ProtoPacket extends PacketV0 {
         return str.substring(0, str.length() - 1) + ")]";
     }
     
-    public static ProtoPacket parse(int packet_id, byte proto_ver, byte[] data, int length) {
-        if (length < 12) throw new IllegalArgumentException("Data too short");
+    public static ProtoPacket parse(int packet_id, byte proto_ver, ByteBuffer buffer) {
+        if (buffer.remaining() < 4) throw new IllegalArgumentException("Data too short");
         Collection<Message> messages = new ArrayList<>();
-        int j = 8;
-        while (j < length) {
-            messages.add(Message.parse(data, j));
-            j += ((data[j] & 0xFF) + 4);
-        }
+        while (buffer.hasRemaining())
+            messages.add(Message.parse(buffer));
         return new ProtoPacket(packet_id, proto_ver, messages);
     }
 }

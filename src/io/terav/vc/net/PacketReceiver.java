@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -27,6 +28,7 @@ public final class PacketReceiver implements Runnable {
     @Override
     public void run() {
         DatagramPacket packet = new DatagramPacket(new byte[65504], 65504);
+        ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
         while (!socket.isClosed()) {
             try {
                 packet.setLength(65504);
@@ -36,7 +38,9 @@ public final class PacketReceiver implements Runnable {
                     Main.applicationMessage(packet.getData()[6]);
                     continue;
                 }
-                Packet p = Packet.parse(packet.getData(), packet.getLength());
+                buffer.limit(packet.getLength());
+                buffer.rewind();
+                Packet p = Packet.parse(buffer);
                 if (last_received_packet.getOrDefault(packet.getAddress(), -1) != p.packet_id) {
                     packets.add(new SimpleEntry(packet.getAddress(), p));
                     last_received_packet.put(packet.getAddress(), p.packet_id);

@@ -1,5 +1,6 @@
 package io.terav.vc.net.v0;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,34 +18,24 @@ public class ReceiptMessage extends Message {
     }
 
     @Override
-    protected byte[] data() {
-        byte[] data = new byte[exceptions.size() * 4 + 8];
-        data[0] = (byte) packet_first;
-        data[1] = (byte)(packet_first >> 8);
-        data[2] = (byte)(packet_first >> 16);
-        data[3] = (byte)(packet_first >> 24);
-        data[4] = (byte) packet_last;
-        data[5] = (byte)(packet_last >> 8);
-        data[6] = (byte)(packet_last >> 16);
-        data[7] = (byte)(packet_last >> 24);
-        int index = 8;
-        for (int num : exceptions) {
-            data[index++] = (byte) num;
-            data[index++] = (byte)(num >> 8);
-            data[index++] = (byte)(num >> 16);
-            data[index++] = (byte)(num >> 24);
-        }
-        return data;
+    protected void serializeMessage(ByteBuffer buffer) {
+        buffer.putInt(packet_first);
+        buffer.putInt(packet_last);
+        for (int exc : exceptions)
+            buffer.putInt(exc);
+    }
+    @Override
+    protected int serializedLength() {
+        return exceptions.size() * 4 + 8;
     }
     
-    public static ReceiptMessage parse(short message_id, byte[] data, int offset, int length) {
-        if (length % 4 != 0 || length < 8) throw new IllegalArgumentException("Message length invalid");
-        
-        int packet_first = (data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8) | ((data[offset + 2] & 0xFF) << 16) | ((data[offset + 3] & 0xFF) << 24);
-        int packet_last = (data[offset + 4] & 0xFF) | ((data[offset + 5] & 0xFF) << 8) | ((data[offset + 6] & 0xFF) << 16) | ((data[offset + 7] & 0xFF) << 24);
+    public static ReceiptMessage parse(short message_id, ByteBuffer buffer) {
+        if (buffer.remaining() % 4 != 0 || buffer.remaining() < 8) throw new IllegalArgumentException("Message length invalid");
+        int packet_first = buffer.getInt();
+        int packet_last = buffer.getInt();
         Collection<Integer> exceptions = new ArrayList<>();
-        for (int i = 0; i * 4 + 8 < length; i++)
-            exceptions.add((data[offset + i * 4 + 8] & 0xFF) | ((data[offset + i * 4 + 9] & 0xFF) << 8) | ((data[offset + i * 4 + 10] & 0xFF) << 16) | ((data[offset + i * 4 + 11] & 0xFF) << 24));
+        while (buffer.hasRemaining())
+            exceptions.add(buffer.getInt());
         return new ReceiptMessage(message_id, packet_first, packet_last, Collections.unmodifiableCollection(exceptions));
     }
 }

@@ -1,5 +1,7 @@
 package io.terav.vc.net.v0;
 
+import java.nio.ByteBuffer;
+
 public class VCRequestAcknowledgeMessage extends Message {
     public final short request_id;
 
@@ -9,16 +11,16 @@ public class VCRequestAcknowledgeMessage extends Message {
     }
 
     @Override
-    protected byte[] data() {
-        byte[] data = new byte[2];
-        data[0] = (byte) request_id;
-        data[1] = (byte)(request_id >> 8);
-        return data;
+    protected void serializeMessage(ByteBuffer buffer) {
+        buffer.putShort(request_id);
+    }
+    @Override
+    protected int serializedLength() {
+        return 2;
     }
     
-    public static VCRequestAcknowledgeMessage parse(short message_id, byte[] data, int offset, int length) {
-        if (length != 2) throw new IllegalArgumentException("Message length invalid");
-        short request_id = (short) ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8));
-        return new VCRequestAcknowledgeMessage(message_id, request_id);
+    public static VCRequestAcknowledgeMessage parse(short message_id, ByteBuffer buffer) {
+        if (buffer.remaining() != 2) throw new IllegalArgumentException("Message length invalid");
+        return new VCRequestAcknowledgeMessage(message_id, buffer.getShort());
     }
 }

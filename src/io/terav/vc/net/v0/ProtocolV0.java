@@ -72,7 +72,7 @@ public final class ProtocolV0 {
                     // pipe this packet!
                     StreamOutputDriver drv = AudioManager.getOutputDriver();
                     if (drv != null)
-                        drv.dispatch(dp.data.array());
+                        drv.dispatch(dp.data);
                 } else {
                     // silently discard the packet
                 }

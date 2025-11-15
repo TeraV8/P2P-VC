@@ -2,6 +2,8 @@ package io.terav.vc.net;
 
 import io.terav.vc.net.v0.PacketV0;
 import io.terav.vc.net.v0.ProtocolV0;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public abstract class Packet {
     public final int packet_id;
@@ -19,27 +21,17 @@ public abstract class Packet {
         this.recipient = recipient;
     }
     
-    protected abstract byte[] data();
+    protected abstract void serialize(ByteBuffer buffer);
+    protected abstract int serializedLength();
     public final byte[] serialize() {
-        byte[] data = data();
-        byte[] out = new byte[data.length + 8];
-        if ((proto_ver >> 8) == 0) {
-            out[0] = (byte) (packet_id);
-            out[1] = (byte) (packet_id >> 8);
-            out[2] = (byte) (packet_id >> 16);
-            out[3] = (byte) (packet_id >> 24);
-        } else {
-            out[0] = (byte) (packet_id >> 24);
-            out[1] = (byte) (packet_id >> 16);
-            out[2] = (byte) (packet_id >> 8);
-            out[3] = (byte) (packet_id);
-        }
-        out[4] = (byte) (proto_ver);
-        out[5] = (byte) (proto_ver >> 8);
-        out[6] = flags;
-        out[7] = recipient;
-        System.arraycopy(data, 0, out, 8, data.length);
-        return out;
+        ByteBuffer buffer = ByteBuffer.allocate(serializedLength() + 8);
+        buffer.putInt(packet_id);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.putShort(proto_ver);
+        buffer.put(flags);
+        buffer.put(recipient);
+        serialize(buffer.slice());
+        return buffer.array();
     }
     
     @Override
@@ -47,14 +39,21 @@ public abstract class Packet {
         return getClass().getSimpleName() + "[packet_id=" + packet_id + ",version=" + Integer.toHexString(this.proto_ver) + "]";
     }
     
-    static Packet parse(byte[] data, int length) {
-        if (length < 8) return new InvalidPacket(0, (short) 0, (byte) 0, (byte) 0, InvalidPacket.REASON_LENGTH);
-        final int packet_id = (data[0] & 0xFF) | ((data[1] & 0xFF) << 8) | ((data[2] & 0xFF) << 16) | ((data[3] & 0xFF) << 24);
-        final short version = (short) ((data[4] & 0xFF) | ((data[5] & 0xFF) << 8));
-        return switch (data[5]) {
-            case 0 -> PacketV0.parse(packet_id, version, data, length);
-            case -1 -> new InvalidPacket(packet_id, version, data[6], data[7], InvalidPacket.REASON_VERSION_PROCESS);
-            default -> new InvalidPacket(packet_id, version, data[6], data[7], InvalidPacket.REASON_VERSION_HIGH);
+    static Packet parse(ByteBuffer buffer) {
+        buffer.rewind();
+        if (buffer.remaining() < 8) return new InvalidPacket(0, (short) 0, (byte) 0, (byte) 0, InvalidPacket.REASON_LENGTH);
+        buffer.order(ByteOrder.BIG_ENDIAN);
+        final int packet_id = buffer.getInt();
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        final short version = buffer.getShort();
+        final byte flags = buffer.get();
+        final byte recipient = buffer.get();
+        return switch ((byte) (version >> 8)) {
+            case 0 -> {
+                yield PacketV0.parse(packet_id, version, flags, recipient, buffer.slice());
+            }
+            case -1 -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_VERSION_PROCESS);
+            default -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_VERSION_HIGH);
         };
     }
     

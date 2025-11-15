@@ -1,5 +1,7 @@
 package io.terav.vc.net.v0;
 
+import java.nio.ByteBuffer;
+
 public class EchoPacket extends PacketV0 {
     public final long content;
 
@@ -12,17 +14,12 @@ public class EchoPacket extends PacketV0 {
     }
 
     @Override
-    protected byte[] data() {
-        byte[] data = new byte[8];
-        data[0] = (byte) content;
-        data[1] = (byte)(content >> 8);
-        data[2] = (byte)(content >> 16);
-        data[3] = (byte)(content >> 24);
-        data[4] = (byte)(content >> 32);
-        data[5] = (byte)(content >> 40);
-        data[6] = (byte)(content >> 48);
-        data[7] = (byte)(content >> 56);
-        return data;
+    protected void serialize(ByteBuffer buffer) {
+        buffer.putLong(content);
+    }
+    @Override
+    protected int serializedLength() {
+        return 8;
     }
     
     @Override
@@ -30,11 +27,8 @@ public class EchoPacket extends PacketV0 {
         return getClass().getSimpleName() + "[packet_id=" + packet_id + ",version=" + Integer.toHexString(proto_ver) + ",content=" + Long.toHexString(content) + ']';
     }
     
-    public static EchoPacket parse(int packet_id, byte proto_ver, byte[] data, int length) {
-        if (length != 16) throw new IllegalArgumentException("Data length mismatch");
-        long content = 0;
-        for (int i = 0; i < 8; i++)
-            content |= (long)(data[i + 8] & 0xFF) << (i * 8);
-        return new EchoPacket(packet_id, proto_ver, content);
+    public static EchoPacket parse(int packet_id, byte proto_ver, ByteBuffer buffer) {
+        if (buffer.remaining() != 8) throw new IllegalArgumentException("Data length mismatch");
+        return new EchoPacket(packet_id, proto_ver, buffer.getLong());
     }
 }

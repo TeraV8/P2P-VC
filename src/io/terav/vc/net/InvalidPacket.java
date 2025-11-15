@@ -1,5 +1,7 @@
 package io.terav.vc.net;
 
+import java.nio.ByteBuffer;
+
 /**
  * A {@link Packet} that, for all intents and purposes, could not be parsed, due to a missing protocol processor or invalid packet format.
  * Receipt of an {@code InvalidPacket} consitutes a communication-related {@code Exception}.
@@ -27,7 +29,11 @@ public final class InvalidPacket extends Packet {
     }
     
     @Override
-    protected byte[] data() {
+    protected void serialize(ByteBuffer buffer) {
+        throw new UnsupportedOperationException("Invalid packets cannot be serialized");
+    }
+    @Override
+    protected int serializedLength() {
         throw new UnsupportedOperationException("Invalid packets cannot be serialized");
     }
 }

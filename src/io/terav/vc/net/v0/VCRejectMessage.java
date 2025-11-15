@@ -1,5 +1,6 @@
 package io.terav.vc.net.v0;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class VCRejectMessage extends Message {
@@ -13,18 +14,17 @@ public class VCRejectMessage extends Message {
     }
 
     @Override
-    protected byte[] data() {
-        byte[] noteBytes = note.getBytes(Charset.forName("ISO-8859-1"));
-        byte[] data = new byte[noteBytes.length + 2];
-        data[0] = (byte) request_id;
-        data[1] = (byte)(request_id >> 8);
-        System.arraycopy(noteBytes, 0, data, 2, noteBytes.length);
-        return data;
+    protected void serializeMessage(ByteBuffer buffer) {
+        buffer.putShort(request_id);
+        buffer.put(note.getBytes(Charset.forName("ISO-8859-1")));
+    }
+    @Override
+    protected int serializedLength() {
+        return note.getBytes(Charset.forName("ISO-8859-1")).length + 2;
     }
     
-    public static VCRejectMessage parse(short message_id, byte[] data, int offset, int length) {
-        if (length < 2) throw new IllegalArgumentException("Message length too short");
-        short request_id = (short) ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8));
-        return new VCRejectMessage(message_id, request_id, new String(data, offset + 2, length - 2, Charset.forName("ISO-8859-1")));
+    public static VCRejectMessage parse(short message_id, ByteBuffer buffer) {
+        if (buffer.remaining() < 2) throw new IllegalArgumentException("Message length too short");
+        return new VCRejectMessage(message_id, buffer.getShort(), new String(buffer.array(), buffer.position(), buffer.remaining(), Charset.forName("ISO-8859-1")));
     }
 }

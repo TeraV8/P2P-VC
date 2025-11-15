@@ -1,5 +1,7 @@
 package io.terav.vc.net.v0;
 
+import java.nio.ByteBuffer;
+
 public class ProtoDowngradeMessage extends Message {
     public final short version;
 
@@ -12,16 +14,16 @@ public class ProtoDowngradeMessage extends Message {
     }
 
     @Override
-    protected byte[] data() {
-        byte[] data = new byte[2];
-        data[0] = (byte) version;
-        data[1] = (byte)(version >> 8);
-        return data;
+    protected void serializeMessage(ByteBuffer buffer) {
+        buffer.putShort(version);
+    }
+    @Override
+    protected int serializedLength() {
+        return 2;
     }
     
-    public static ProtoDowngradeMessage parse(short message_id, byte[] data, int offset, int length) {
-        if (length != 2) throw new IllegalArgumentException("Message length invalid");
-        short version = (short) ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8));
-        return new ProtoDowngradeMessage(message_id, version);
+    public static ProtoDowngradeMessage parse(short message_id, ByteBuffer buffer) {
+        if (buffer.remaining() != 2) throw new IllegalArgumentException("Message length invalid");
+        return new ProtoDowngradeMessage(message_id, buffer.getShort());
     }
 }

@@ -1,5 +1,7 @@
 package io.terav.vc.net.v0;
 
+import java.nio.ByteBuffer;
+
 public class IPRequestMessage extends Message {
 
     public IPRequestMessage(short message_id) {
@@ -7,12 +9,11 @@ public class IPRequestMessage extends Message {
     }
 
     @Override
-    protected byte[] data() {
-        return new byte[0];
+    protected void serializeMessage(ByteBuffer buffer) {
+        // nothing to serialize
     }
-    
-    public static IPRequestMessage parse(short message_id, byte[] data, int offset, int length) {
-        if (length > 0) throw new IllegalArgumentException("Message length invalid");
-        return new IPRequestMessage(message_id);
+    @Override
+    protected int serializedLength() {
+        return 0;
     }
 }

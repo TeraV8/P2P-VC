@@ -2,6 +2,8 @@ package io.terav.vc.net.v0;
 
 import io.terav.vc.net.InvalidPacket;
 import io.terav.vc.net.Packet;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public abstract class PacketV0 extends Packet {
     public static byte VERSION_MINOR = 0;
@@ -13,13 +15,14 @@ public abstract class PacketV0 extends Packet {
         super(packet_id, (short) (proto_ver & 0xFF), flags, recipient);
     }
     
-    public static Packet parse(int packet_id, short version, byte[] data, int length) {
+    public static Packet parse(int packet_id, short version, byte flags, byte recipient, ByteBuffer buffer) {
         if (((version >>> 8) & 0xFF) != 0) throw new IllegalArgumentException("Invalid packet version");
-        return switch (data[6] & 0x3) {
-            case 0 -> EchoPacket.parse(packet_id, (byte) version, data, length);
-            case 1 -> ProtoPacket.parse(packet_id, (byte) version, data, length);
-            case 2 -> DataPacket.parse(packet_id, (byte) version, data, length);
-            case 3 -> new InvalidPacket(packet_id, version, data[6], data[7], InvalidPacket.REASON_MALFORMED_HEADER);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        return switch (flags & 0x3) {
+            case 0 -> EchoPacket.parse(packet_id, (byte) version, buffer);
+            case 1 -> ProtoPacket.parse(packet_id, (byte) version, buffer);
+            case 2 -> DataPacket.parse(packet_id, (byte) version, buffer);
+            case 3 -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_MALFORMED_HEADER);
             default -> null; // impossible
         };
     }

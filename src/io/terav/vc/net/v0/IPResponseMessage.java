@@ -3,21 +3,27 @@ package io.terav.vc.net.v0;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 
 public class IPResponseMessage extends Message {
     private final byte[] address = new byte[4];
 
-    private IPResponseMessage(short message_id, byte[] address, int index) {
+    private IPResponseMessage(short message_id, ByteBuffer buffer) {
         super((byte) 0xC1, message_id);
-        System.arraycopy(address, index, this.address, 0, 4);
+        buffer.get(address);
     }
     public IPResponseMessage(short message_id, Inet4Address address) {
-        this(message_id, address.getAddress(), 0);
+        super((byte) 0xC1, message_id);
+        System.arraycopy(address.getAddress(), 0, this.address, 0, 4);
     }
 
     @Override
-    protected byte[] data() {
-        return address;
+    protected void serializeMessage(ByteBuffer buffer) {
+        buffer.put(address);
+    }
+    @Override
+    protected int serializedLength() {
+        return 4;
     }
     
     public Inet4Address getAddress() {
@@ -29,8 +35,8 @@ public class IPResponseMessage extends Message {
         }
     }
     
-    public static IPResponseMessage parse(short message_id, byte[] data, int offset, int length) {
-        if (length != 4) throw new IllegalArgumentException("Message length invalid");
-        return new IPResponseMessage(message_id, data, offset);
+    public static IPResponseMessage parse(short message_id, ByteBuffer buffer) {
+        if (buffer.remaining() != 4) throw new IllegalArgumentException("Message length invalid");
+        return new IPResponseMessage(message_id, buffer);
     }
 }
