@@ -4,6 +4,12 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 
 public abstract class Message {
+    /**
+     * <table>
+     * <tr><td>0x7F</td><td>Reserved (protocol)</td></tr>
+     * <tr><td>0xFF</td><td>Reserved (tattle)</td></tr>
+     * </table>
+     */
     public final byte type;
     public final short message_id;
     
@@ -20,7 +26,7 @@ public abstract class Message {
      * Messages with a higher priority number should be routed sooner.
      * 
      * <ul><li>Routing priority must not &gt; 15 or &lt; 0</li>
-     * <li>Routing priority &lt;= 7 should not be forwarded (generally set this for protocol messages)</li>
+     * <li>Routing priority &lt; 8 should not be forwarded (generally set this for protocol messages)</li>
      * <li>Routing priority == 15 is reserved for future use</li></ul>
      * @return The routing priority of this message
      */
