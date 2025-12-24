@@ -6,8 +6,10 @@ import java.nio.ByteBuffer;
 public abstract class Message {
     /**
      * <table>
+     * <tr><td>0x74</td><td>{@linkplain PeerSelfIdentifyMessage} (protocol)</td></tr>
      * <tr><td>0x7E</td><td>{@linkplain ProtoDowngradeMessage}</td></tr>
      * <tr><td>0x7F</td><td>Reserved (protocol)</td></tr>
+     * <tr><td>0xF4</td><td>{@linkplain PeerSelfIdentifyMessage} (tattle)</td></tr>
      * <tr><td>0xFF</td><td>Reserved (tattle)</td></tr>
      * </table>
      */
@@ -55,6 +57,7 @@ public abstract class Message {
             ByteBuffer mini = buf.slice(buf.position(), length);
             buf.position(buf.position() + length);
             return switch (type & 0xFF) {
+                case 0x74, 0xF4 -> PeerSelfIdentifyMessage.parse(type, message_id, mini);
                 case 0x7E -> new ProtoDowngradeMessage(message_id);
                 default -> new InvalidMessage(message_id, type);
             };
