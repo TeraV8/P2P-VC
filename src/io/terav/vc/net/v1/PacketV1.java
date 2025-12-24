@@ -15,8 +15,7 @@ public abstract class PacketV1 extends Packet {
         return switch (flags & 0x3) {
             case 0 -> new EchoPacket(packet_id); // screw consistency because this is all that is necessary
             case 1 -> DataPacket.parse(packet_id, recipient, buffer);
-            //case 2 -> ProtoPacket.parse();
-            //case 3 -> ProtoPacket.parse();
+            case 2, 3 -> ProtoPacket.parse(packet_id, flags, recipient, buffer);
             default -> null;
         };
     }
