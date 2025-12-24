@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 
 /**
  * Notify the peer to use protocol v1 and the associated minor version.
+ * <p>Message type {@code 0x7E}</p>
  * 
  * @author terav
  */
