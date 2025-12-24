@@ -1,5 +1,6 @@
 package io.terav.vc.net.v0;
 
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -54,7 +55,7 @@ public abstract class Message {
             buffer.position(buffer.limit());
             buffer.limit(initialLimit);
             return m;
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (BufferUnderflowException e) {
             throw new IllegalArgumentException("Data too short", e);
         }
     }
