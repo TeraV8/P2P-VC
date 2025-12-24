@@ -2,6 +2,7 @@ package io.terav.vc.net;
 
 import io.terav.vc.net.v0.PacketV0;
 import io.terav.vc.net.v0.ProtocolV0;
+import io.terav.vc.net.v1.PacketV1;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -49,9 +50,8 @@ public abstract class Packet {
         final byte flags = buffer.get();
         final byte recipient = buffer.get();
         return switch ((byte) (version >> 8)) {
-            case 0 -> {
-                yield PacketV0.parse(packet_id, version, flags, recipient, buffer.slice());
-            }
+            case 0 -> PacketV0.parse(packet_id, version, flags, recipient, buffer.slice());
+            case 1 -> PacketV1.parse(packet_id, version, flags, recipient, buffer.slice());
             case -1 -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_VERSION_PROCESS);
             default -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_VERSION_HIGH);
         };
