@@ -5,7 +5,7 @@ import io.terav.vc.net.Packet;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-public abstract class PacketV0 extends Packet {
+public abstract sealed class PacketV0 extends Packet permits EchoPacket, DataPacket, ProtoPacket {
     public static byte VERSION_MINOR = 0;
     
     protected PacketV0(int packet_id, byte proto_ver, byte flags) {

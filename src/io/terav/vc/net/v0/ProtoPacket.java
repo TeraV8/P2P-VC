@@ -3,12 +3,10 @@ package io.terav.vc.net.v0;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
-public class ProtoPacket extends PacketV0 {
+public final class ProtoPacket extends PacketV0 {
     public final Collection<Message> messages;
 
     public ProtoPacket(int packet_id, Collection<Message> messages) {

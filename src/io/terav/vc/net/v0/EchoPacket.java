@@ -2,7 +2,7 @@ package io.terav.vc.net.v0;
 
 import java.nio.ByteBuffer;
 
-public class EchoPacket extends PacketV0 {
+public final class EchoPacket extends PacketV0 {
     public final long content;
 
     public EchoPacket(int packet_id, long content) {
