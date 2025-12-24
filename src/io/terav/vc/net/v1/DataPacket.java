@@ -38,6 +38,6 @@ public class DataPacket extends PacketV1 {
         final int sequence = buffer.getInt();
         final byte[] data = new byte[buffer.remaining()];
         buffer.get(data);
-        return new DataPacket(packet_id, recipient, channel_id, sequence, data);
+        return new DataPacket(packet_id, buffer.get(5), recipient, channel_id, sequence, data);
     }
 }
