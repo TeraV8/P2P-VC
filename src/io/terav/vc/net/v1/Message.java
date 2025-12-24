@@ -31,7 +31,7 @@ public abstract class Message {
      * @return The routing priority of this message
      */
     public int getPriority() {
-        return 7;
+        return 3 | ((this.type & 0x80) >> 4);
     }
     
     protected abstract void serializeContents(ByteBuffer buf);
