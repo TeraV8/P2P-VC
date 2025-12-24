@@ -2,7 +2,7 @@ package io.terav.vc.net.v0;
 
 import java.nio.ByteBuffer;
 
-public class VCAcceptMessage extends Message {
+public final class VCAcceptMessage extends Message {
     public final int remote_channel;
     public final short request_id;
 

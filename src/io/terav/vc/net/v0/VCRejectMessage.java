@@ -3,7 +3,7 @@ package io.terav.vc.net.v0;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-public class VCRejectMessage extends Message {
+public final class VCRejectMessage extends Message {
     public final short request_id;
     public final String note;
 

@@ -5,7 +5,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
-public class IPResponseMessage extends Message {
+public final class IPResponseMessage extends Message {
     private final byte[] address = new byte[4];
 
     private IPResponseMessage(short message_id, ByteBuffer buffer) {

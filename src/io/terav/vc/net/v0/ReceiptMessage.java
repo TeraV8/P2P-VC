@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-public class ReceiptMessage extends Message {
+public final class ReceiptMessage extends Message {
     public final int packet_first;
     public final int packet_last;
     public final Collection<Integer> exceptions;

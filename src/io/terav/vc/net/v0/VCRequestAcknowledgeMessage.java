@@ -2,7 +2,7 @@ package io.terav.vc.net.v0;
 
 import java.nio.ByteBuffer;
 
-public class VCRequestAcknowledgeMessage extends Message {
+public final class VCRequestAcknowledgeMessage extends Message {
     public final short request_id;
 
     public VCRequestAcknowledgeMessage(short message_id, short request_id) {

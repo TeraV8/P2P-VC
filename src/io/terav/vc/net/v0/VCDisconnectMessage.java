@@ -2,7 +2,7 @@ package io.terav.vc.net.v0;
 
 import java.nio.ByteBuffer;
 
-public class VCDisconnectMessage extends Message {
+public final class VCDisconnectMessage extends Message {
     public VCDisconnectMessage(short message_id) {
         super((byte) 0x34, message_id);
     }

@@ -2,7 +2,7 @@ package io.terav.vc.net.v0;
 
 import java.nio.ByteBuffer;
 
-public class ProtoDowngradeMessage extends Message {
+public final class ProtoDowngradeMessage extends Message {
     public final short version;
 
     public ProtoDowngradeMessage(short message_id) {

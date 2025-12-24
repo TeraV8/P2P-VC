@@ -2,7 +2,7 @@ package io.terav.vc.net.v0;
 
 import java.nio.ByteBuffer;
 
-public class IPRequestMessage extends Message {
+public final class IPRequestMessage extends Message {
 
     public IPRequestMessage(short message_id) {
         super((byte) 0xC0, message_id);

@@ -4,7 +4,9 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-public abstract class Message {
+public abstract sealed class Message permits InvalidMessage, IPRequestMessage,
+        IPResponseMessage, ProtoDowngradeMessage, ReceiptMessage, VCAcceptMessage,
+        VCDisconnectMessage, VCRejectMessage, VCRequestAcknowledgeMessage, VCRequestMessage {
     public final byte type;
     public final short message_id;
     
