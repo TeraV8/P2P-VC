@@ -22,7 +22,16 @@ public abstract class Packet {
         this.recipient = recipient;
     }
     
+    /**
+     * Convert the information in this packet to binary data.
+     * Only write the contents of the packet; the header is handled by a wrapper method.
+     * @param buffer The buffer in which to write data
+     */
     protected abstract void serialize(ByteBuffer buffer);
+    /**
+     * Returns the length of the inner serialized data. Does not include the header.
+     * @return The length of the serialized data
+     */
     protected abstract int serializedLength();
     public final byte[] serialize() {
         ByteBuffer buffer = ByteBuffer.allocate(serializedLength() + 8);
