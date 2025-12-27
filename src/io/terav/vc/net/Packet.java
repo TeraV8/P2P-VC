@@ -3,6 +3,7 @@ package io.terav.vc.net;
 import io.terav.vc.net.v0.PacketV0;
 import io.terav.vc.net.v0.ProtocolV0;
 import io.terav.vc.net.v1.PacketV1;
+import io.terav.vc.net.v1.ProtocolV1;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -12,7 +13,7 @@ public abstract class Packet {
     public final byte flags;
     public final byte recipient;
     
-    public static final byte HIGHEST_PROTOVER = 0;
+    public static final byte HIGHEST_PROTOVER = 1;
     private static final boolean[] activatedProtocolProcessors = new boolean[HIGHEST_PROTOVER + 1];
     
     protected Packet(int packet_id, short proto_ver, byte flags, byte recipient) {
@@ -72,6 +73,7 @@ public abstract class Packet {
         if (activatedProtocolProcessors[version]) return;
         switch (version) {
             case 0 -> ProtocolV0.activateProtocolProcessor();
+            case 1 -> ProtocolV1.activateProtocolProcessor();
         }
         activatedProtocolProcessors[version] = true;
     }
