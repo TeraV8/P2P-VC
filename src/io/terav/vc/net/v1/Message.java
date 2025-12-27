@@ -11,6 +11,10 @@ public abstract class Message {
      * <tr><td>0x65</td><td>Reserved (protocol voice response negative)</td></tr>
      * <tr><td>0x66</td><td>{@link ResponseMessage#VOICE_ACCEPT}</td></tr>
      * <tr><td>0x67</td><td>{@link ResponseMessage#VOICE_REJECT}</td></tr>
+     * <tr><td>0x68</td><td>VoiceJointRequestMessage</td></tr>
+     * <tr><td>0x69</td><td>VoiceJointRequestConditionalMessage</td></tr>
+     * <tr><td>0x6E</td><td>VoiceJointAcceptMessage</td></tr>
+     * <tr><td>0x6F</td><td>VoiceJointRejectMessage</td></tr>
      * <tr><td>0x74</td><td>{@link PeerSelfIdentifyMessage} (protocol)</td></tr>
      * <tr><td>0x75</td><td>{@link EmptyMessage#PROTO_REQUEST_IDENTIFY}</td></tr>
      * <tr><td>0x7E</td><td>{@link EmptyMessage#PROTO_DOWNGRADE}</td></tr>

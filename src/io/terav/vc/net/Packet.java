@@ -1,9 +1,7 @@
 package io.terav.vc.net;
 
 import io.terav.vc.net.v0.PacketV0;
-import io.terav.vc.net.v0.ProtocolV0;
 import io.terav.vc.net.v1.PacketV1;
-import io.terav.vc.net.v1.ProtocolV1;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -13,8 +11,6 @@ public abstract class Packet {
     public final byte flags;
     public final byte recipient;
     
-    public static final byte HIGHEST_PROTOVER = 1;
-    private static final boolean[] activatedProtocolProcessors = new boolean[HIGHEST_PROTOVER + 1];
     
     protected Packet(int packet_id, short proto_ver, byte flags, byte recipient) {
         this.packet_id = packet_id;
@@ -65,16 +61,5 @@ public abstract class Packet {
             case -1 -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_VERSION_PROCESS);
             default -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_VERSION_HIGH);
         };
-    }
-    
-    public static synchronized void activateProtocolProcessor(byte version) {
-        if (version == -1) version = HIGHEST_PROTOVER;
-        if ((version & 0xFF) > HIGHEST_PROTOVER) throw new UnsupportedOperationException("Protocol version " + (version & 0xFF) + " not supported");
-        if (activatedProtocolProcessors[version]) return;
-        switch (version) {
-            case 0 -> ProtocolV0.activateProtocolProcessor();
-            case 1 -> ProtocolV1.activateProtocolProcessor();
-        }
-        activatedProtocolProcessors[version] = true;
     }
 }

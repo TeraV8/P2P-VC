@@ -4,6 +4,7 @@ import io.terav.vc.net.DiscoveryManager;
 import io.terav.vc.net.Packet;
 import io.terav.vc.net.PacketReceiver;
 import io.terav.vc.net.PeerInfo;
+import io.terav.vc.net.Protocol;
 import io.terav.vc.net.v0.ProtocolV0;
 import java.net.BindException;
 import java.net.DatagramPacket;
@@ -136,7 +137,7 @@ public final class NetworkManager implements Runnable {
         pakr = new PacketReceiver(socket);
         thread.start();
         pakr.thread.start();
-        Packet.activateProtocolProcessor((byte) -1);
+        Protocol.activateProtocolProcessor((byte) -1);
     }
 
     public static abstract class ConnectionMode {
