@@ -2,7 +2,7 @@ package io.terav.vc.net.v1;
 
 import java.nio.ByteBuffer;
 
-public class DataPacket extends PacketV1 {
+public final class DataPacket extends PacketV1 {
     public final int channel_id;
     public final int sequence;
     private final byte[] data;

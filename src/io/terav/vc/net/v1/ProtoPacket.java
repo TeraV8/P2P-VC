@@ -8,7 +8,7 @@ import java.util.Collections;
 // Two kinds of ProtoPackets in v1:
 // - protocol: messages between relevant peers to facilitate proper communication
 // - tattle: messages between any and all peers to share information about peers
-public class ProtoPacket extends PacketV1 {
+public final class ProtoPacket extends PacketV1 {
     public final boolean tattle;
     private final Collection<Message> messages;
 
