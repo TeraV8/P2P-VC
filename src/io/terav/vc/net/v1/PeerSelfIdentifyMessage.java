@@ -12,31 +12,40 @@ import java.util.UUID;
  * 
  * @author terav
  */
-public class PeerSelfIdentifyMessage extends Message {
+public final class PeerSelfIdentifyMessage extends Message {
     public final UUID selfId;
     public final String commonName;
+    private final byte[] commonName_bytes;
 
     public PeerSelfIdentifyMessage(boolean tattle, short message_id, UUID uuid, String name) {
         super((byte) (tattle ? 0xF4 : 0x74), message_id);
         this.selfId = (uuid == null) ? new UUID(0L, 0L) : uuid;
         this.commonName = (name == null) ? "" : name;
+        this.commonName_bytes = this.commonName.getBytes(Charset.forName("ISO-8859-1"));
+        if (serializedLength() > 255) throw new IllegalArgumentException("Common name is too long (limit 239 bytes)");
+    }
+    private PeerSelfIdentifyMessage(byte type, short message_id, UUID uuid, byte[] nameBytes) {
+        super(type, message_id);
+        this.selfId = uuid;
+        this.commonName_bytes = nameBytes;
+        this.commonName = new String(nameBytes, Charset.forName("ISO-8859-1"));
     }
 
     @Override
     protected void serializeContents(ByteBuffer buf) {
         buf.putLong(selfId.getMostSignificantBits());
         buf.putLong(selfId.getLeastSignificantBits());
-        buf.put(commonName.getBytes(Charset.forName("ISO-8859-1")));
+        buf.put(commonName_bytes);
     }
     @Override
     protected int serializedLength() {
-        return 16 + commonName.getBytes(Charset.forName("ISO-8859-1")).length;
+        return 16 + commonName_bytes.length;
     }
     
     public static PeerSelfIdentifyMessage parse(byte type, short message_id, ByteBuffer buf) {
         final UUID uuid = new UUID(buf.getLong(), buf.getLong());
         final byte[] nameBytes = new byte[buf.remaining()];
         buf.get(nameBytes);
-        return new PeerSelfIdentifyMessage((type & 0x80) != 0, message_id, uuid, new String(nameBytes, Charset.forName("ISO-8859-1")));
+        return new PeerSelfIdentifyMessage(type, message_id, uuid, nameBytes);
     }
 }
