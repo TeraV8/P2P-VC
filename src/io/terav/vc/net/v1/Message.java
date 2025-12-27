@@ -6,6 +6,11 @@ import java.nio.ByteBuffer;
 public abstract class Message {
     /**
      * <table>
+     * <tr><td>0x60</td><td>{@link VoiceRequestMessage}</td></tr>
+     * <tr><td>0x64</td><td>{@link VoiceAcknowledgeMessage}</td></tr>
+     * <tr><td>0x65</td><td>Reserved (protocol voice response negative)</td></tr>
+     * <tr><td>0x66</td><td>{@link ResponseMessage#VOICE_ACCEPT}</td></tr>
+     * <tr><td>0x67</td><td>{@link ResponseMessage#VOICE_REJECT}</td></tr>
      * <tr><td>0x74</td><td>{@link PeerSelfIdentifyMessage} (protocol)</td></tr>
      * <tr><td>0x75</td><td>{@link EmptyMessage#PROTO_REQUEST_IDENTIFY}</td></tr>
      * <tr><td>0x7E</td><td>{@link EmptyMessage#PROTO_DOWNGRADE}</td></tr>
@@ -58,6 +63,9 @@ public abstract class Message {
             ByteBuffer mini = buf.slice(buf.position(), length);
             buf.position(buf.position() + length);
             return switch (type & 0xFF) {
+                case 0x60 -> VoiceRequestMessage.parse(message_id, mini);
+                case 0x64 -> VoiceAcknowledgeMessage.parse(message_id, mini);
+                case 0x66, 0x67 -> ResponseMessage.parse(type, message_id, mini);
                 case 0x74, 0xF4 -> PeerSelfIdentifyMessage.parse(type, message_id, mini);
                 case 0x75, 0x7E -> new EmptyMessage(type, message_id);
                 default -> new InvalidMessage(message_id, type);
