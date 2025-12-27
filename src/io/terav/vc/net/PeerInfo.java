@@ -2,11 +2,14 @@ package io.terav.vc.net;
 
 import io.terav.vc.NetworkManager;
 import java.net.InetAddress;
+import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("EqualsAndHashcode")
 public final class PeerInfo {
+    private final static AtomicLong a_runtime_id = new AtomicLong(System.currentTimeMillis());
+    
     /** Runtime-constant identifier for this object */
-    public final long runtime_id = System.currentTimeMillis() ^ System.nanoTime();
+    public final long runtime_id = a_runtime_id.getAndIncrement();
     /** Known remote address of this peer */
     public InetAddress remote;
     /** Hostname (can be obtained from remote) */

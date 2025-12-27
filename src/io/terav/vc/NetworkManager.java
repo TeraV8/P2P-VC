@@ -47,6 +47,8 @@ public final class NetworkManager implements Runnable {
                     break;
                 }
                 final PeerInfo peer = getPeer(p.getKey());
+                if (p.getValue().proto_ver > peer.protover_hi)
+                    peer.protover_hi = p.getValue().proto_ver;
                 peer.last_receipt_time = now;
                 for (int i = 0; i < hooks.size(); i++)
                     if (hooks.get(i).test(p.getValue(), peer))
