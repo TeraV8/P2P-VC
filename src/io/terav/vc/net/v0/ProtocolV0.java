@@ -5,7 +5,6 @@ import io.terav.vc.Main;
 import io.terav.vc.NetworkManager;
 import io.terav.vc.StreamOutputDriver;
 import io.terav.vc.net.PeerInfo;
-import java.net.Inet4Address;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
@@ -14,68 +13,77 @@ import javax.swing.JOptionPane;
 public final class ProtocolV0 {
     private static final HashMap<Long, Long> pending_echoes = new HashMap<>();
     private static final HashMap<Long, Long> downgrade_request_times = new HashMap<>();
-    // TODO stuf
+    
     private ProtocolV0() {}
+    
     public static void activateProtocolProcessor() {
         NetworkManager.addPacketHook((nvp,peer) -> {
             ConnectionMode cm = null;
             if (NetworkManager.connectionMode != null && (NetworkManager.connectionMode instanceof ConnectionMode)) cm = (ConnectionMode) NetworkManager.connectionMode;
-            final ConnectionMode fcm = cm; // workaround for finicky fields in lambda expressions
-            if (nvp instanceof EchoPacket p) {
-                if (pending_echoes.containsKey(p.content))
-                    pending_echoes.remove(p.content);
-                else
-                    peer.send(new EchoPacket(peer.nextPacketId(), p.content));
-            } else if (nvp instanceof ProtoPacket p) {
-                for (Message m : p.messages) {
-                    if (m instanceof VCRequestMessage vcrq) {
-                        // send an acknowledgement posthaste
-                        if (cm != null && cm.peer == peer) {
-                            // automatic accept
-                            peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCAcceptMessage(peer.nextMessageId(), new Random().nextInt(), vcrq.message_id))));
-                            return false;
-                        }
-                        NetworkManager.sendPacket(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRequestAcknowledgeMessage(peer.nextMessageId(), m.message_id))), peer.remote);
-                        Main.window.tasks.add(() -> {
-                            int result = JOptionPane.showOptionDialog(
-                                    Main.window,
-                                    new String[] { peer.getName() + " is requesting to VC", vcrq.note },
-                                    "VC Request Incoming",
-                                    JOptionPane.YES_NO_OPTION,
-                                    JOptionPane.INFORMATION_MESSAGE,
-                                    null,
-                                    new String[] { "Accept", "Decline" },
-                                    null
-                            );
-                            if (result == 1) {
-                                // decline
-                                peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRejectMessage(peer.nextMessageId(), vcrq.message_id, ""))));
-                            } else if (result == 0) {
-                                // accept
-                                final int channel_id = new Random().nextInt();
-                                postconnect(peer, channel_id);
-                                peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCAcceptMessage(peer.nextMessageId(), channel_id, vcrq.message_id))));
+            switch (nvp) {
+                case EchoPacket p -> {
+                    if (pending_echoes.containsKey(p.content))
+                        pending_echoes.remove(p.content);
+                    else
+                        peer.send(new EchoPacket(peer.nextPacketId(), p.content));
+                }
+                case ProtoPacket p -> {
+                    for (Message m : p.messages) {
+                        switch (m) {
+                            case VCRequestMessage vcrq -> {
+                                // send an acknowledgement posthaste
+                                if (cm != null && cm.peer == peer) {
+                                    // automatic accept
+                                    peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCAcceptMessage(peer.nextMessageId(), new Random().nextInt(), vcrq.message_id))));
+                                    return false;
+                                }
+                                NetworkManager.sendPacket(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRequestAcknowledgeMessage(peer.nextMessageId(), m.message_id))), peer.remote);
+                                Main.window.tasks.add(() -> {
+                                    int result = JOptionPane.showOptionDialog(
+                                            Main.window,
+                                            new String[] { peer.getName() + " is requesting to VC", vcrq.note },
+                                            "VC Request Incoming",
+                                            JOptionPane.YES_NO_OPTION,
+                                            JOptionPane.INFORMATION_MESSAGE,
+                                            null,
+                                            new String[] { "Accept", "Decline" },
+                                            null
+                                    );
+                                    if (result == 1) {
+                                        // decline
+                                        peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCRejectMessage(peer.nextMessageId(), vcrq.message_id, ""))));
+                                    } else if (result == 0) {
+                                        // accept
+                                        final int channel_id = new Random().nextInt();
+                                        postconnect(peer, channel_id);
+                                        peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCAcceptMessage(peer.nextMessageId(), channel_id, vcrq.message_id))));
+                                    }
+                                });
                             }
-                        });
-                    } else if (m instanceof VCDisconnectMessage vcdm) {
-                        // the remote wishes to disconnect
-                        if (cm != null && cm.peer == peer) {
-                            cm.last_mode_change_time = System.currentTimeMillis();
-                            cm.mode = ConnectionMode.Mode.Disconnected;
-                            Main.window.connectionUpdate();
-                            AudioManager.setActiveInputConsumer(null);
+                            case VCDisconnectMessage vcdm -> {
+                                // the remote wishes to disconnect
+                                if (cm != null && cm.peer == peer) {
+                                    cm.last_mode_change_time = System.currentTimeMillis();
+                                    cm.mode = ConnectionMode.Mode.Disconnected;
+                                    Main.window.connectionUpdate();
+                                    AudioManager.setActiveInputConsumer(null);
+                                }
+                            }
+                            default -> {}
                         }
                     }
                 }
-            } else if (nvp instanceof DataPacket dp) {
-                if (cm != null && dp.channel_id == cm.channel_id && cm.mode == ConnectionMode.Mode.Connected) {
-                    // pipe this packet!
-                    StreamOutputDriver drv = AudioManager.getOutputDriver();
-                    if (drv != null)
-                        drv.dispatch(dp.data);
-                } else {
-                    // silently discard the packet
+                case DataPacket dp -> {
+                    if (cm != null && dp.channel_id == cm.channel_id && cm.mode == ConnectionMode.Mode.Connected) {
+                        // pipe this packet!
+                        StreamOutputDriver drv = AudioManager.getOutputDriver();
+                        if (drv != null)
+                            drv.dispatch(dp.data);
+                    } else {
+                        // silently discard the packet
+                    }
                 }
+                default -> {}
             }
             return false;
         });
@@ -118,21 +126,25 @@ public final class ProtocolV0 {
             if (peer2 != peer) return false;
             if (!(packet instanceof ProtoPacket)) return false;
             for (Message m : ((ProtoPacket) packet).messages) {
-                if (m instanceof VCAcceptMessage vcam) {
-                    if (vcam.request_id == cm.request_id) {
-                        postconnect(peer, vcam.remote_channel);
-                        return true;
+                switch (m) {
+                    case VCAcceptMessage vcam -> {
+                        if (vcam.request_id == cm.request_id) {
+                            postconnect(peer, vcam.remote_channel);
+                            return true;
+                        }
                     }
-                } else if (m instanceof VCRejectMessage vcrm) {
-                    if (vcrm.request_id == cm.request_id) {
-                        cm.last_mode_change_time = System.currentTimeMillis();
-                        cm.mode = ConnectionMode.Mode.Rejected;
-                        Main.window.connectionUpdate();
-                        Main.window.tasks.add(() -> {
-                            JOptionPane.showMessageDialog(Main.window, new String[] { "Your request to VC was denied.", vcrm.note }, "VC Request Denied", JOptionPane.ERROR_MESSAGE);
-                        });
-                        return true;
+                    case VCRejectMessage vcrm -> {
+                        if (vcrm.request_id == cm.request_id) {
+                            cm.last_mode_change_time = System.currentTimeMillis();
+                            cm.mode = ConnectionMode.Mode.Rejected;
+                            Main.window.connectionUpdate();
+                            Main.window.tasks.add(() -> {
+                                JOptionPane.showMessageDialog(Main.window, new String[] { "Your request to VC was denied.", vcrm.note }, "VC Request Denied", JOptionPane.ERROR_MESSAGE);
+                            });
+                            return true;
+                        }
                     }
+                    default -> {}
                 }
             }
             return false;
