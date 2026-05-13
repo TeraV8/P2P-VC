@@ -28,6 +28,10 @@ public final class PeerInfo {
     public long last_receipt_time = -1;
     /** Timestamp of last connection */
     public long last_connect_time = -1;
+    /** Rebound time from last echo */
+    public long ping = -1;
+    /** Timestamp of last echo */
+    public long last_echo_time = -1;
     
     private long modhash;
     

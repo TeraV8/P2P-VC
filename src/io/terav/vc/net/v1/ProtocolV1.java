@@ -14,9 +14,12 @@ public final class ProtocolV1 {
     public static void activateProtocolProcessor() {
         NetworkManager.addPacketHook((packet, peer) -> {
             if (packet instanceof EchoPacket echo) {
-                if (pendingEchoes.containsKey(echo.data) && pendingEchoes.get(echo.data) > 0)
-                    pendingEchoes.put(echo.data, pendingEchoes.get(echo.data) - System.currentTimeMillis());
-                else
+                if (pendingEchoes.containsKey(echo.data) && pendingEchoes.get(echo.data) > 0) {
+                    long time = pendingEchoes.get(echo.data) - System.currentTimeMillis();
+                    peer.ping = time;
+                    peer.last_echo_time = System.currentTimeMillis();
+                    pendingEchoes.remove(echo.data);
+                } else
                     NetworkManager.sendPacket(new EchoPacket(peer.nextPacketId(), echo.data), peer.remote);
             }
             return false;
