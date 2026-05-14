@@ -51,6 +51,7 @@ public final class NetworkManager implements Runnable {
                 if (p.getValue().proto_ver > peer.protover_hi)
                     peer.protover_hi = p.getValue().proto_ver;
                 peer.last_receipt_time = now;
+                Protocol.activateProtocolProcessor((byte) (p.getValue().proto_ver >> 8));
                 for (int i = 0; i < hooks.size(); i++)
                     if (hooks.get(i).test(p.getValue(), peer))
                         hooks.remove(i--);
