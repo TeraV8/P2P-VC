@@ -69,6 +69,9 @@ public final class ProtocolV0 {
                                     AudioManager.setActiveInputConsumer(null);
                                 }
                             }
+                            case ProtoDowngradeMessage pdm -> {
+                                peer.protover_compat = PacketV0.VERSION_MINOR;
+                            }
                             default -> {}
                         }
                     }
