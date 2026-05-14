@@ -22,7 +22,7 @@ public final class ProtoPacket extends PacketV1 {
         for (Message m : messages)
             if (m.isTattle() != this.tattle)
                 throw new IllegalArgumentException("Cannot include tattle message in protocol packet and vice versa");
-        this.messages = Collections.unmodifiableCollection(messages);
+        this.messages = Collections.unmodifiableCollection(new ArrayList(messages));
     }
     private ProtoPacket(int packet_id, byte proto_ver, byte flags, byte recipient, Collection<Message> messages) {
         super(packet_id, proto_ver, flags, recipient);
