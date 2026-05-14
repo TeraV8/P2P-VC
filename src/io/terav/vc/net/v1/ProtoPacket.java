@@ -10,7 +10,7 @@ import java.util.Collections;
 // - tattle: messages between any and all peers to share information about peers
 public final class ProtoPacket extends PacketV1 {
     public final boolean tattle;
-    private final Collection<Message> messages;
+    public final Collection<Message> messages;
 
     public ProtoPacket(int packet_id, byte recipient, boolean tattle, Collection<Message> messages) {
         this(packet_id, PacketV1.VERSION_MINOR, recipient, tattle, messages);

@@ -8,15 +8,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.function.BiPredicate;
 
 public final class ProtocolV1 {
     // key: echo packet data    value: timestamp of outbound packet if positive, if negative it is negative rebound time
     private static final HashMap<Long, Long> pendingEchoes = new HashMap<>();
     private static final HashMap<PeerInfo, ArrayList<Message>> pendingOutbound = new HashMap<>();
     private static final HashMap<PeerInfo, ArrayList<Message>> pendingTattle = new HashMap<>();
+    private static final ArrayList<BiPredicate<Message, PeerInfo>> messageHooks = new ArrayList<>();
     
     private static NetworkSynchronizer sync;
-    // TODO stuf
+    
     private ProtocolV1() {}
     
     public static void activateProtocolProcessor() {
@@ -29,6 +31,14 @@ public final class ProtocolV1 {
                     pendingEchoes.remove(echo.data);
                 } else
                     NetworkManager.sendPacket(new EchoPacket(peer.nextPacketId(), echo.data), peer.remote);
+            } else if (packet instanceof DataPacket data) {
+                // TODO handle data packet
+            } else if (packet instanceof ProtoPacket proto) {
+                for (Message m : proto.messages) {
+                    for (int i = 0; i < messageHooks.size(); i++)
+                        if (messageHooks.get(i).test(m, peer))
+                            messageHooks.remove(i--);
+                }
             }
             return false;
         });
