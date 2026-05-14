@@ -1,6 +1,7 @@
 package io.terav.vc.net.v0;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public final class DataPacket extends PacketV0 {
     public final int channel_id;
@@ -20,6 +21,7 @@ public final class DataPacket extends PacketV0 {
     
     @Override
     protected void serialize(ByteBuffer buffer) {
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.putInt(channel_id);
         buffer.putInt(sequence_id);
         buffer.put(data);
