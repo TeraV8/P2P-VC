@@ -189,7 +189,7 @@ public final class ProtocolV0 {
         }
         @Override
         public boolean includes(PeerInfo peer) {
-            return !mode.finalized && this.peer == peer;
+            return this.peer == peer;
         }
     }
 }
