@@ -3,7 +3,9 @@ package io.terav.vc.net.v1;
 import io.terav.vc.NetworkManager;
 import io.terav.vc.net.PeerInfo;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Random;
 
@@ -63,11 +65,33 @@ public final class ProtocolV1 {
     }
     
     private static abstract class ConnectionMode extends NetworkManager.ConnectionMode {
-        
+        public int sequence = 1;
     }
-    private static class SingleConnectionMode extends ConnectionMode {
+    private static final class SingleConnectionMode extends ConnectionMode {
+        public PeerInfo remote;
         
+        @Override
+        public void disconnectProto() {
+            // TODO
+        }
+        @Override
+        public boolean includes(PeerInfo peer) {
+            return remote == peer;
+        }
     }
+    private static final class JointConnectionMode extends ConnectionMode {
+        public final Collection<PeerInfo> remote = new HashSet<>();
+        
+        @Override
+        public void disconnectProto() {
+            // TODO
+        }
+        @Override
+        public boolean includes(PeerInfo peer) {
+            return remote.contains(peer);
+        }
+    }
+    
     private static final class NetworkSynchronizer implements Runnable {
         private static final int MAX_MESSAGE_DELAY_TIME = 200;
         
