@@ -94,7 +94,7 @@ final class PeerInfoDialog extends JDialog {
             else
                 lastonline.setText(minutes / 1440 + " days ago");
         }
-        protover.setText((peer.protover_hi == -1) ? "unknown" : "v" + peer.protover_hi);
+        protover.setText((peer.protover_hi == -1) ? "unknown" : "v" + (peer.protover_hi / 256) + "." + (peer.protover_hi % 256));
         setVisible(true);
         requestFocus();
     }
