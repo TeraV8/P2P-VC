@@ -1,6 +1,7 @@
 package io.terav.vc;
 
 import io.terav.vc.net.DiscoveryManager;
+import io.terav.vc.net.InvalidPacket;
 import io.terav.vc.net.Packet;
 import io.terav.vc.net.PacketReceiver;
 import io.terav.vc.net.PeerInfo;
@@ -51,6 +52,15 @@ public final class NetworkManager implements Runnable {
                 if (p.getValue().proto_ver > peer.protover_hi)
                     peer.protover_hi = p.getValue().proto_ver;
                 peer.last_receipt_time = now;
+                if (p.getValue() instanceof InvalidPacket inv) {
+                    // we can't process this packet
+                    if (inv.reason == InvalidPacket.REASON_VERSION_HIGH) {
+                        if (System.currentTimeMillis() - peer.last_downgrade_request_time > 1000) {
+                            peer.last_downgrade_request_time = System.currentTimeMillis();
+                        }
+                    }
+                    continue;
+                }
                 Protocol.activateProtocolProcessor((byte) (p.getValue().proto_ver >> 8));
                 for (int i = 0; i < hooks.size(); i++)
                     if (hooks.get(i).test(p.getValue(), peer))
