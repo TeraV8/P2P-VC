@@ -46,7 +46,7 @@ public class StreamOutputDriver implements Runnable {
 //                if (pendingDispatch != null) pendingDispatch.interrupt();
             } else {
                 if (silenced && line.available() < 24)
-                    line.write(new byte[25], 0, 25);
+                    line.write(new byte[line.getFormat().getFrameSize() * 25], 0, line.getFormat().getFrameSize() * 25);
                 try {
                     Thread.sleep(1);
                 } catch (InterruptedException e) {}
