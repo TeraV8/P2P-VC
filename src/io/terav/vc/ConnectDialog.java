@@ -86,9 +86,9 @@ final class ConnectDialog extends JDialog {
         if (dialog == null)
             dialog = use = new ConnectDialog();
         
-        final PeerInfo connected = NetworkManager.getConnectedPeer();
-        if (connected != null) {
-            int opt = JOptionPane.showConfirmDialog(Main.window, "Disconnect from " + connected.getName() + "?", "Confirm disconnect", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+        // TODO: add vc name to dialog
+        if (NetworkManager.connectionMode != null && !NetworkManager.connectionMode.mode.finalized) {
+            int opt = JOptionPane.showConfirmDialog(Main.window, "Disconnect?", "Confirm disconnect", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
             if (opt == JOptionPane.CANCEL_OPTION) return;
             NetworkManager.disconnectVC();
         }

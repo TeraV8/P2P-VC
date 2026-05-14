@@ -170,23 +170,26 @@ public final class ProtocolV0 {
         downgrade_request_times.put(peer.runtime_id, System.currentTimeMillis());
         peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new ProtoDowngradeMessage(peer.nextMessageId()))));
     }
-    public static void disconnect() {
-        if (NetworkManager.connectionMode == null) return;
-        if (NetworkManager.connectionMode instanceof ConnectionMode cm) {
-            if (!cm.mode.finalized) {
-                NetworkManager.sendPacket(new ProtoPacket(cm.peer.nextPacketId(), Arrays.asList(new VCDisconnectMessage(cm.peer.nextMessageId()))), cm.peer.remote);
+    private static class ConnectionMode extends NetworkManager.ConnectionMode {
+        public short request_id;
+        public int channel_id;
+        public int sequence = 1;
+        
+        @Override
+        public void disconnectProto() {
+            if (!mode.finalized) {
+                NetworkManager.sendPacket(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new VCDisconnectMessage(peer.nextMessageId()))), peer.remote);
             }
             AudioManager.setActiveInputConsumer(null);
             AudioManager.getOutputDriver().silenced = true;
             NetworkManager.connectionMode = null;
             Main.window.connectionUpdate();
-            if (cm.mode == ConnectionMode.Mode.Connected)
-                cm.peer.last_connect_time = System.currentTimeMillis();
+            if (mode == ConnectionMode.Mode.Connected)
+                peer.last_connect_time = System.currentTimeMillis();
         }
-    }
-    private static class ConnectionMode extends NetworkManager.ConnectionMode {
-        public short request_id;
-        public int channel_id;
-        public int sequence = 1;
+        @Override
+        public boolean includes(PeerInfo peer) {
+            return !mode.finalized && this.peer == peer;
+        }
     }
 }

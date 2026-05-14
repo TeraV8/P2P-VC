@@ -90,16 +90,17 @@ public final class NetworkManager implements Runnable {
     }
     public static void connectVC(InetAddress remote, String note) {
         if (connectionMode != null && !connectionMode.mode.finalized)
-            ProtocolV0.disconnect();
+            connectionMode.disconnectProto();
         ProtocolV0.connectVC(getPeer(remote), note);
     }
     public static void disconnectVC() {
-        ProtocolV0.disconnect();
+        if (connectionMode != null && !connectionMode.mode.finalized)
+            connectionMode.disconnectProto();
     }
-    public static PeerInfo getConnectedPeer() {
-        if (connectionMode == null) return null;
-        if (connectionMode.mode.finalized) return null;
-        return connectionMode.peer;
+    public static boolean isConnectedTo(PeerInfo peer) {
+        if (connectionMode == null) return false;
+        if (connectionMode.mode.finalized) return false;
+        return connectionMode.includes(peer);
     }
     
     static void registerPeer(PeerInfo pi, boolean suppressUpdate) {
@@ -109,7 +110,7 @@ public final class NetworkManager implements Runnable {
     }
     static void forgetPeer(PeerInfo peer) {
         if (!peers.containsValue(peer)) return;
-        if (getConnectedPeer() == peer)
+        if (isConnectedTo(peer))
             disconnectVC();
         peers.remove(peer.remote);
         Main.window.peersUpdate();
@@ -166,6 +167,9 @@ public final class NetworkManager implements Runnable {
                 this.finalized = finalized;
             }
         }
+        
+        public abstract void disconnectProto();
+        public abstract boolean includes(PeerInfo peer);
     }
     
     public static final class SendPacketTask implements Runnable {

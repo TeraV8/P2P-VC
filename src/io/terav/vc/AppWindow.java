@@ -255,7 +255,7 @@ public class AppWindow extends JFrame implements Runnable {
             JMenuItem ctx_vcc = new JMenuItem("Connect");
             ctx_vcc.addActionListener(e -> {
                 final PeerInfo peer = peerlist.get(channels.getSelectedIndex());
-                if (peer == NetworkManager.getConnectedPeer())
+                if (NetworkManager.isConnectedTo(peer))
                     NetworkManager.disconnectVC();
                 else
                     ConnectDialog.prompt(peer.remote.getHostAddress());
@@ -274,10 +274,10 @@ public class AppWindow extends JFrame implements Runnable {
                 if (bounds != null && bounds.contains(e.getPoint())) {
                     final PeerInfo peer = peerlist.get(selection);
                     if (e.getButton() == 3) {
-                        ctx_vcc.setText((peer == NetworkManager.getConnectedPeer()) ? "Disconnect" : "Connect");
+                        ctx_vcc.setText(NetworkManager.isConnectedTo(peer) ? "Disconnect" : "Connect");
                         peer_ctx.show(channels, e.getX(), e.getY());
                     } else if (e.getClickCount() == 2 && e.getButton() == 1) {
-                        if (peer != NetworkManager.getConnectedPeer())
+                        if (!NetworkManager.isConnectedTo(peer))
                             ConnectDialog.prompt(peer.remote.getHostAddress());
                     }
                 }
@@ -297,12 +297,12 @@ public class AppWindow extends JFrame implements Runnable {
                 ctx.fillRect(0, 0, getWidth(), 1);
                 ctx.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
                 ctx.setColor(Color.black);
-                final String name = (NetworkManager.connectionMode == null) ? null : NetworkManager.connectionMode.peer.getName();
+                // TODO: add vc name to status bar
                 String status = (NetworkManager.connectionMode == null) ? "Standby" : switch (NetworkManager.connectionMode.mode) {
-                    case Connecting -> "Connecting to " + name + "...";
-                    case Failed -> "Failed to connect to " + name;
-                    case Waiting -> "Waiting to connect to " + name;
-                    case Connected -> "Connected to " + name;
+                    case Connecting -> "Connecting...";
+                    case Failed -> "Failed to connect";
+                    case Waiting -> "Waiting to connect";
+                    case Connected -> "Connected";
                     default -> "" + NetworkManager.connectionMode.mode;
                 };
                 ctx.drawString(status, getWidth() - 200, 13);
@@ -346,7 +346,8 @@ public class AppWindow extends JFrame implements Runnable {
                         if (time.length() < 5) time = "0" + time;
                         time = (minutes / 60) + ":" + time;
                     }
-                    yield "Connected to " + NetworkManager.connectionMode.peer.getName() + " (" + time + ")";
+                    // TODO: add peer name(s) to display
+                    yield "Connected (" + time + ")";
                 }
                 default -> "" + NetworkManager.connectionMode.mode;
             });
