@@ -96,6 +96,8 @@ public final class ProtocolV1 {
         private static final int MAX_MESSAGE_DELAY_TIME = 200;
         
         final Thread thread;
+        private boolean pending = false;
+        
         NetworkSynchronizer() {
             this.thread = new Thread(this, "proto-v1-sync");
             this.thread.setDaemon(true);
@@ -103,24 +105,31 @@ public final class ProtocolV1 {
         @Override
         public void run() {
             while (true) {
-                synchronized (pendingOutbound) {
-                    for (Entry<PeerInfo, ArrayList<Message>> entry : pendingOutbound.entrySet()) {
-                        if (!entry.getValue().isEmpty())
-                            entry.getKey().send(new ProtoPacket(entry.getKey().nextPacketId(), (byte) 0, false, entry.getValue()));
-                        entry.getValue().clear();
-                    }
-                }
-                synchronized (pendingTattle) {
-                    for (Entry<PeerInfo, ArrayList<Message>> entry : pendingTattle.entrySet()) {
-                        if (!entry.getValue().isEmpty())
-                            entry.getKey().send(new ProtoPacket(entry.getKey().nextPacketId(), (byte) 0, true, entry.getValue()));
-                        entry.getValue().clear();
-                    }
+                if (!pending) {
+                    pending = true;
+                    NetworkManager.addTask(this::synchronize);
                 }
                 try {
                     Thread.sleep(MAX_MESSAGE_DELAY_TIME);
                 } catch (InterruptedException e) {}
             }
+        }
+        private void synchronize() {
+            synchronized (pendingOutbound) {
+                for (Entry<PeerInfo, ArrayList<Message>> entry : pendingOutbound.entrySet()) {
+                    if (!entry.getValue().isEmpty())
+                        entry.getKey().send(new ProtoPacket(entry.getKey().nextPacketId(), (byte) 0, false, entry.getValue()));
+                    entry.getValue().clear();
+                }
+            }
+            synchronized (pendingTattle) {
+                for (Entry<PeerInfo, ArrayList<Message>> entry : pendingTattle.entrySet()) {
+                    if (!entry.getValue().isEmpty())
+                        entry.getKey().send(new ProtoPacket(entry.getKey().nextPacketId(), (byte) 0, true, entry.getValue()));
+                    entry.getValue().clear();
+                }
+            }
+            pending = false;
         }
     }
 }
