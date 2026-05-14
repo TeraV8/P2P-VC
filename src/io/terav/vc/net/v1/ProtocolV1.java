@@ -2,6 +2,7 @@ package io.terav.vc.net.v1;
 
 import io.terav.vc.NetworkManager;
 import io.terav.vc.net.PeerInfo;
+import io.terav.vc.net.v0.ProtocolV0;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,6 +36,37 @@ public final class ProtocolV1 {
                 // TODO handle data packet
             } else if (packet instanceof ProtoPacket proto) {
                 for (Message m : proto.messages) {
+                    if (m instanceof VoiceRequestMessage vreq) {
+                        // this peer wants to connect to us
+                        byte flags = 0;
+                        boolean acknowledge = true;
+                        if (peer.nickname != null)
+                            flags |= VoiceAcknowledgeMessage.STATUS_MASK_KNOWN_CONTACT;
+                        if (((ProtoPacket) packet).proto_ver > PacketV1.VERSION_MINOR + 256)
+                            flags |= VoiceAcknowledgeMessage.STATUS_MASK_WARNING_LOWVER;
+                        if (NetworkManager.connectionMode != null && !NetworkManager.connectionMode.mode.finalized) {
+                            // logic to handle other voice
+                            if (NetworkManager.connectionMode instanceof ConnectionMode cm) {
+                                // peer is eligible to join this call
+                                flags |= VoiceAcknowledgeMessage.STATUS_MASK_IN_CALL;
+                                if (cm.includes(peer)) {
+                                    // we're already in this call!
+                                    ResponseMessage vacc = new ResponseMessage(ResponseMessage.VOICE_ACCEPT, peer.nextMessageId(), vreq.message_id);
+                                    queueMessage(peer, vacc);
+                                    acknowledge = false;
+                                }
+                            } else {
+                                // we must deny this request
+                                ResponseMessage vrej = new ResponseMessage(ResponseMessage.VOICE_REJECT, peer.nextMessageId(), vreq.message_id);
+                                queueMessage(peer, vrej);
+                                acknowledge = false;
+                            }
+                        }
+                        if (acknowledge) {
+                            VoiceAcknowledgeMessage vack = new VoiceAcknowledgeMessage(peer.nextMessageId(), vreq.message_id, flags);
+                            queueMessage(peer, vack);
+                        }
+                    }
                     for (int i = 0; i < messageHooks.size(); i++)
                         if (messageHooks.get(i).test(m, peer))
                             messageHooks.remove(i--);

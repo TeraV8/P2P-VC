@@ -173,7 +173,7 @@ public final class ProtocolV0 {
         downgrade_request_times.put(peer.runtime_id, System.currentTimeMillis());
         peer.send(new ProtoPacket(peer.nextPacketId(), Arrays.asList(new ProtoDowngradeMessage(peer.nextMessageId()))));
     }
-    private static class ConnectionMode extends NetworkManager.ConnectionMode {
+    public static final class ConnectionMode extends NetworkManager.ConnectionMode {
         public short request_id;
         public int channel_id;
         public int sequence = 1;
