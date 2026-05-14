@@ -55,11 +55,15 @@ public abstract class Packet {
         final short version = buffer.getShort();
         final byte flags = buffer.get();
         final byte recipient = buffer.get();
-        return switch ((byte) (version >> 8)) {
-            case 0 -> PacketV0.parse(packet_id, version, flags, recipient, buffer.slice());
-            case 1 -> PacketV1.parse(packet_id, version, flags, recipient, buffer.slice());
-            case -1 -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_VERSION_PROCESS);
-            default -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_VERSION_HIGH);
-        };
+        try {
+            return switch ((byte) (version >> 8)) {
+                case 0 -> PacketV0.parse(packet_id, version, flags, recipient, buffer.slice());
+                case 1 -> PacketV1.parse(packet_id, version, flags, recipient, buffer.slice());
+                case -1 -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_VERSION_PROCESS);
+                default -> new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_VERSION_HIGH);
+            };
+        } catch (Exception e) {
+            return new InvalidPacket(packet_id, version, flags, recipient, InvalidPacket.REASON_INVALID_DATA);
+        }
     }
 }

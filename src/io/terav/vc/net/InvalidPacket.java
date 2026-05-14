@@ -20,6 +20,8 @@ public final class InvalidPacket extends Packet {
     public static final int REASON_VERSION_LOW = 18;
     /** The packet was invalid due to a malformed packet header. */
     public static final int REASON_MALFORMED_HEADER = 32;
+    /** The packet was invalid due to a parsing error. */
+    public static final int REASON_INVALID_DATA = 48;
     
     public final int reason;
     
