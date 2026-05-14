@@ -10,7 +10,7 @@ public class Protocol {
     
     private Protocol() {}
     
-    private static byte getVersion(PeerInfo peer) {
+    public static byte getVersion(PeerInfo peer) {
         if (peer.protover_compat != -1)
             return (byte) (peer.protover_compat >> 8);
         if (peer.protover_hi == -1)

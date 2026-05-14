@@ -7,6 +7,7 @@ import io.terav.vc.net.PacketReceiver;
 import io.terav.vc.net.PeerInfo;
 import io.terav.vc.net.Protocol;
 import io.terav.vc.net.v0.ProtocolV0;
+import io.terav.vc.net.v1.ProtocolV1;
 import java.net.BindException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -101,7 +102,11 @@ public final class NetworkManager implements Runnable {
     public static void connectVC(InetAddress remote, String note) {
         if (connectionMode != null && !connectionMode.mode.finalized)
             connectionMode.disconnectProto();
-        ProtocolV0.connectVC(getPeer(remote), note);
+        final PeerInfo peer = getPeer(remote);
+        switch (Protocol.getVersion(peer)) {
+            case 0 -> ProtocolV0.connectVC(peer, note);
+            default -> ProtocolV1.connectVC(peer, note);
+        }
     }
     public static void disconnectVC() {
         if (connectionMode != null && !connectionMode.mode.finalized)
